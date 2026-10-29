@@ -8,11 +8,11 @@ Optymalizuj obrazy i konwertuj całe foldery na potrzeby stron www. Bezpłatnie,
 
 | System | Pobieranie | Instalacja |
 | --- | --- | --- |
-| 🍎 macOS 15+ · Apple Silicon | **[Pobierz na Maca](dist/WebDrop-macOS-arm64.zip?raw=true)** | Rozpakuj i przenieś WebDrop.app do Applications |
-| 🪟 Windows 10/11 · x64 | **[Pobierz na Windows](dist/WebDrop-Windows-x64.zip?raw=true)** | Rozpakuj cały ZIP i otwórz WebDrop.exe |
-| 🐧 Linux · x64 | **[Pobierz na Linux](dist/WebDrop-Linux-x64.tar.gz?raw=true)** | Rozpakuj i uruchom WebDrop |
+| 🍎 macOS 15+ · Apple Silicon | **[Pobierz na Maca](dist/WebDrop-macOS-arm64.pkg?raw=true)** | Otwórz instalator .pkg; aplikacja trafi do Applications |
+| 🪟 Windows 10/11 · x64 | **[Pobierz na Windows](dist/WebDrop-Windows-x64-Setup.exe?raw=true)** | Uruchom Setup.exe, potem WebDrop z menu Start |
+| 🐧 Linux · x64 | **[Pobierz na Linux](dist/WebDrop-x86_64.AppImage?raw=true)** | Zezwól na wykonywanie AppImage we właściwościach pliku i otwórz go |
 
-**Wersja 0.9.4.** Windows/Linux to wersje testowe, jeszcze bez testów uruchomienia na tych systemach. Linux wymaga glibc 2.41+, OpenGL, X11/Wayland, libxkbcommon i portalu pulpitu. macOS nie ma notaryzacji, a Windows podpisu wydawcy.
+**Wersja 0.9.4.** Windows/Linux to wersje testowe, jeszcze bez testów uruchomienia na tych systemach. Linux wymaga glibc 2.41+, OpenGL, X11/Wayland, libxkbcommon portalu pulpitu i FUSE. macOS nie ma notaryzacji, a Windows podpisu wydawcy.
 
 [Sumy kontrolne SHA-256](dist/SHA256SUMS.txt)
 
@@ -50,6 +50,8 @@ brew install libavif jpeg-xl mupdf-tools ghostscript
 ./scripts/bundle.sh
 open dist/WebDrop.app
 ```
+
+[Przygotowanie instalatorów](docs/PACKAGING.md)
 
 </details>
 

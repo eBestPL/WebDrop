@@ -2,6 +2,10 @@
 # macOS only by default. Pass --all explicitly after both cross builds.
 set -eu
 cd "$(dirname "$0")/.."
+if [ ! -d dist/WebDrop.app ]; then
+    printf 'Missing dist/WebDrop.app. Run ./scripts/bundle.sh first.\n' >&2
+    exit 1
+fi
 case "${1:-}" in
     "") ;;
     --all)
@@ -14,14 +18,15 @@ cp README.md README.pl.md LICENSE artifacts/THIRD-PARTY-NOTICES.txt dist/WebDrop
 rm -f dist/WebDrop.app/Contents/Resources/README.en.md
 mkdir -p dist/WebDrop.app/Contents/Resources/docs
 cp -R docs/screenshots dist/WebDrop.app/Contents/Resources/docs/
+cp docs/PACKAGING.md dist/WebDrop.app/Contents/Resources/docs/
 codesign --force --sign - dist/WebDrop.app
 codesign --verify --deep --strict dist/WebDrop.app
-ditto -c -k --sequesterRsrc --keepParent dist/WebDrop.app dist/WebDrop-macOS-arm64.zip
+python3 scripts/package-installers.py macos
 python3 - <<'PY'
 from pathlib import Path
 import hashlib
 folder = Path('dist')
-names = ['WebDrop-macOS-arm64.zip', 'WebDrop-Windows-x64.zip', 'WebDrop-Linux-x64.tar.gz']
+names = ['WebDrop-macOS-arm64.pkg', 'WebDrop-Windows-x64-Setup.exe', 'WebDrop-x86_64.AppImage']
 lines = []
 for name in names:
     path = folder / name

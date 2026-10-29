@@ -8,11 +8,11 @@ Optimize images and convert whole folders for the web. Free, local, no uploads.
 
 | System | Download | Install |
 | --- | --- | --- |
-| 🍎 macOS 15+ · Apple Silicon | **[Download for Mac](dist/WebDrop-macOS-arm64.zip?raw=true)** | Unzip and move WebDrop.app to Applications |
-| 🪟 Windows 10/11 · x64 | **[Download for Windows](dist/WebDrop-Windows-x64.zip?raw=true)** | Extract the entire ZIP, then open WebDrop.exe |
-| 🐧 Linux · x64 | **[Download for Linux](dist/WebDrop-Linux-x64.tar.gz?raw=true)** | Extract and launch WebDrop |
+| 🍎 macOS 15+ · Apple Silicon | **[Download for Mac](dist/WebDrop-macOS-arm64.pkg?raw=true)** | Open the .pkg installer; WebDrop goes to Applications |
+| 🪟 Windows 10/11 · x64 | **[Download for Windows](dist/WebDrop-Windows-x64-Setup.exe?raw=true)** | Run Setup.exe, then open WebDrop from Start |
+| 🐧 Linux · x64 | **[Download for Linux](dist/WebDrop-x86_64.AppImage?raw=true)** | Allow executing the AppImage in file properties, then open it |
 
-**Version 0.9.4.** Windows/Linux are preview builds, not yet tested on those systems. Linux requires glibc 2.41+, OpenGL, X11/Wayland, libxkbcommon and a desktop portal. macOS is not notarized; Windows is unsigned.
+**Version 0.9.4.** Windows/Linux are preview builds, not yet tested on those systems. Linux requires glibc 2.41+, OpenGL, X11/Wayland, libxkbcommon a desktop portal and FUSE. macOS is not notarized; Windows is unsigned.
 
 [SHA-256 checksums](dist/SHA256SUMS.txt)
 
@@ -50,6 +50,8 @@ brew install libavif jpeg-xl mupdf-tools ghostscript
 ./scripts/bundle.sh
 open dist/WebDrop.app
 ```
+
+[Packaging installers](docs/PACKAGING.md)
 
 </details>
 

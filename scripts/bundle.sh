@@ -17,6 +17,7 @@ cp LICENSE README.md README.pl.md artifacts/THIRD-PARTY-NOTICES.txt "$app/Conten
 rm -f "$app/Contents/Resources/README.en.md"
 mkdir -p "$app/Contents/Resources/docs"
 cp -R docs/screenshots "$app/Contents/Resources/docs/"
+cp docs/PACKAGING.md "$app/Contents/Resources/docs/"
 mkdir -p .tools
 CLANG_MODULE_CACHE_PATH="$PWD/.tools/clang-cache" swiftc -framework AppKit scripts/make-icon.swift -o .tools/make-icon
 .tools/make-icon "$PWD/artifacts/AppIcon.iconset"

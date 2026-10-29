@@ -1,5 +1,5 @@
 """Package cross-compiled binaries with their verified native library closure."""
-import hashlib, json, re, shutil, subprocess, struct, sys, tarfile, zipfile
+import hashlib, json, re, shutil, subprocess, struct, sys
 from pathlib import Path
 root = Path(__file__).resolve().parent.parent
 platform = sys.argv[1]
@@ -65,6 +65,7 @@ visit(executable)
 for filename in ('LICENSE', 'README.md', 'README.pl.md'):
     shutil.copy2(root / filename, staging / filename)
 shutil.copytree(root / 'docs/screenshots', staging / 'docs/screenshots')
+shutil.copy2(root / 'docs/PACKAGING.md', staging / 'docs/PACKAGING.md')
 shutil.copy2(root / 'artifacts/THIRD-PARTY-NOTICES.txt', staging / 'THIRD-PARTY-NOTICES.txt')
 licenses = staging / 'native-licenses'
 licenses.mkdir()
@@ -80,18 +81,9 @@ for package in license_root.iterdir():
         shutil.copy2(package / 'copyright', licenses / (package.name + '.txt'))
 shutil.copy2(root / '.tools/cross/packages.json', staging / 'native-packages.json')
 (staging / 'BUILD-INFO.json').write_text(json.dumps({'version':'0.9.4','target':target,'runtime_tested':False,'bundled_libraries':sorted(copied.values()),'system_libraries':sorted(system)}, indent=2)+'\n')
-start = 'Extract this entire ZIP, then open WebDrop.exe. Keep the DLL files beside the app.\nWindows 10/11 x64.\n' if windows else 'Extract the archive, then launch the WebDrop executable.\nRequires Linux x64, glibc 2.41+, a graphical desktop with OpenGL, X11 or Wayland,\nlibxkbcommon and xdg-desktop-portal with a desktop backend for file dialogs.\n'
-(staging / 'START-HERE.txt').write_text('WebDrop 0.9.4\n\n'+start+'\nPreview build: compiled on macOS; not yet run on this operating system.\nPNG, JPG, WebP, AVIF, JXL and SVG are supported. AI/PDF to SVG in Hybrid mode requires MuPDF (mutool in PATH). AI/PDF rasterization, TIFF and HEIC import are macOS-only. EPS import requires a current Ghostscript installation on Windows/Linux.\n\nPL: '+('Rozpakuj całe archiwum, następnie otwórz WebDrop.exe. Biblioteki DLL muszą pozostać obok aplikacji.' if windows else 'Rozpakuj archiwum i uruchom plik WebDrop. Wymagany Linux x64 z glibc 2.41+, pulpitem graficznym i OpenGL.')+'\nWersja testowa: skompilowana na macOS; nie była jeszcze uruchamiana na tym systemie.\nAI/PDF do SVG w trybie hybrydowym wymaga MuPDF (mutool w PATH). Rasteryzacja AI/PDF oraz import TIFF i HEIC: tylko macOS. EPS na Windows/Linux wymaga aktualnej instalacji Ghostscript.\n')
-dist = root / 'dist'
-dist.mkdir(exist_ok=True)
-if windows:
-    archive = dist / (name + '.zip')
-    with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as output:
-        for path in sorted(staging.rglob('*')):
-            if path.is_file(): output.write(path, path.relative_to(staging.parent))
-else:
+start = 'Run the Setup.exe installer, then launch WebDrop from the Start menu.\nWindows 10/11 x64.\n' if windows else 'Allow executing the AppImage in file properties, then launch it.\nRequires Linux x64, glibc 2.41+, a graphical desktop with OpenGL, X11 or Wayland,\nlibxkbcommon and xdg-desktop-portal with a desktop backend for file dialogs.\n'
+(staging / 'START-HERE.txt').write_text('WebDrop 0.9.4\n\n'+start+'\nPreview build: compiled on macOS; not yet run on this operating system.\nPNG, JPG, WebP, AVIF, JXL and SVG are supported. AI/PDF to SVG in Hybrid mode requires MuPDF (mutool in PATH). AI/PDF rasterization, TIFF and HEIC import are macOS-only. EPS import requires a current Ghostscript installation on Windows/Linux.\n\nPL: '+('Uruchom instalator Setup.exe, następnie WebDrop z menu Start.' if windows else 'Zezwól na wykonywanie AppImage we właściwościach pliku i uruchom go. Wymagany Linux x64 z glibc 2.41+, pulpitem graficznym i OpenGL.')+'\nWersja testowa: skompilowana na macOS; nie była jeszcze uruchamiana na tym systemie.\nAI/PDF do SVG w trybie hybrydowym wymaga MuPDF (mutool w PATH). Rasteryzacja AI/PDF oraz import TIFF i HEIC: tylko macOS. EPS na Windows/Linux wymaga aktualnej instalacji Ghostscript.\n')
+if not windows:
     executable.chmod(0o755)
-    archive = dist / (name + '.tar.gz')
-    with tarfile.open(archive, 'w:gz') as output:
-        output.add(staging, arcname=name)
-print(f'{archive.name}: {archive.stat().st_size:,} bytes; {len(copied)} bundled libraries')
+subprocess.run([sys.executable, str(root / 'scripts/package-installers.py'), platform], check=True)
+print(f'{platform}: {len(copied)} bundled libraries')
