@@ -10,7 +10,7 @@ cp macos/Info.plist "$app/Contents/Info.plist"
 cp -R macos/en.lproj macos/pl.lproj "$app/Contents/Resources/"
 python3 scripts/bundle-codecs.py "$app"
 python3 scripts/licenses.py
-cp LICENSE README.md README.en.md artifacts/THIRD-PARTY-NOTICES.txt "$app/Contents/Resources/"
+cp LICENSE README.md README.pl.md artifacts/THIRD-PARTY-NOTICES.txt "$app/Contents/Resources/"
 mkdir -p "$app/Contents/Resources/docs"
 cp -R docs/screenshots "$app/Contents/Resources/docs/"
 mkdir -p .tools

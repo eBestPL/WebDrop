@@ -62,7 +62,7 @@ def visit(path):
         shutil.copy2(library.resolve(), libdest / dependency)
         visit(library)
 visit(executable)
-for filename in ('LICENSE', 'README.md', 'README.en.md'):
+for filename in ('LICENSE', 'README.md', 'README.pl.md'):
     shutil.copy2(root / filename, staging / filename)
 shutil.copytree(root / 'docs/screenshots', staging / 'docs/screenshots')
 shutil.copy2(root / 'artifacts/THIRD-PARTY-NOTICES.txt', staging / 'THIRD-PARTY-NOTICES.txt')

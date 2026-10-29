@@ -4,7 +4,7 @@ set -eu
 cd "$(dirname "$0")/.."
 python3 scripts/package-cross.py linux
 python3 scripts/package-cross.py windows
-cp README.md README.en.md LICENSE artifacts/THIRD-PARTY-NOTICES.txt dist/WebDrop.app/Contents/Resources/
+cp README.md README.pl.md LICENSE artifacts/THIRD-PARTY-NOTICES.txt dist/WebDrop.app/Contents/Resources/
 mkdir -p dist/WebDrop.app/Contents/Resources/docs
 cp -R docs/screenshots dist/WebDrop.app/Contents/Resources/docs/
 codesign --force --sign - dist/WebDrop.app

@@ -1,208 +1,270 @@
 # WebDrop — Image Optimizer
 
-[English](README.en.md) · [Polski](README.md)
+[English](README.md) · [Polski](README.pl.md)
 
-**Mniejsze obrazy. Szybszy web. Wszystko lokalnie.**
+**Smaller images. Faster websites. All on your computer.**
 
-Przeciągnij pliki lub foldery, wybierz ustawienia i zatwierdź konwersję — pojedynczo lub całą paczką.
+Drop your files or folders, choose your settings and start converting — one image or a whole batch.
 
-## ⬇️ Pobierz WebDrop 0.9.2
+## ⬇️ Download WebDrop 0.9.2
 
-**Wybierz swój system — bez instalowania Rusta, terminala i kompilowania.**
+**Download for your computer — no Rust, terminal or compilation needed.**
 
-| System | Pobieranie | Co zrobić po pobraniu |
+| System | Download | After downloading |
 | --- | --- | --- |
-| 🍎 **macOS 15+ · Apple Silicon** | **[Pobierz na Maca](dist/WebDrop-macOS-arm64.zip?raw=true)** | Rozpakuj ZIP, przeciągnij **WebDrop.app** do **Applications** i otwórz |
-| 🪟 **Windows 10/11 · x64 · Wersja testowa** | **[Pobierz na Windows](dist/WebDrop-Windows-x64.zip?raw=true)** | Rozpakuj **cały ZIP** i otwórz **WebDrop.exe**; pliki DLL muszą pozostać obok aplikacji |
-| 🐧 **Linux · x64 · Wersja testowa** | **[Pobierz na Linux](dist/WebDrop-Linux-x64.tar.gz?raw=true)** | Rozpakuj archiwum i uruchom plik **WebDrop** |
+| 🍎 **macOS 15+ · Apple Silicon** | **[Download for Mac](dist/WebDrop-macOS-arm64.zip?raw=true)** | Unzip, move **WebDrop.app** to **Applications**, then open it |
+| 🪟 **Windows 10/11 · x64 · Preview** | **[Download for Windows](dist/WebDrop-Windows-x64.zip?raw=true)** | Extract the **entire ZIP**, then open **WebDrop.exe**; keep the DLLs beside it |
+| 🐧 **Linux · x64 · Preview** | **[Download for Linux](dist/WebDrop-Linux-x64.tar.gz?raw=true)** | Extract the archive and launch **WebDrop** |
 
-Wersje Windows i Linux są **eksperymentalne**: skompilowane na macOS, jeszcze bez testów uruchomienia na docelowych systemach. Linux wymaga **glibc 2.41+** (np. Debian 13), OpenGL, X11 lub Wayland, libxkbcommon i działającego portalu pulpitu do wyboru plików. Paczki są przenośnymi archiwami, nie instalatorami. Wersja macOS ma podpis lokalny, bez notaryzacji. Windows nie ma podpisu wydawcy, więc system może wyświetlić komunikat bezpieczeństwa.
+Windows and Linux builds are **experimental**: cross-compiled on macOS and not yet run on their target operating systems. Linux requires **glibc 2.41+** (e.g. Debian 13), OpenGL, X11 or Wayland, libxkbcommon, and a working desktop portal for file dialogs. These are portable archives, not installers. The macOS build has a local signature; it is not notarized. Windows is not code-signed, so operating-system security prompts may appear.
 
-**Wszystkie systemy:** PNG, JPG, WebP, AVIF, JPEG XL i trim SVG. **Tylko macOS:** import AI/PDF, TIFF i HEIC/HEIF. Nie dołączono binarek dla Maców Intel, Windows ARM ani Linux ARM.
+**All platforms:** PNG, JPG, WebP, AVIF, JPEG XL, and SVG trimming. **macOS only:** AI/PDF, TIFF and HEIC/HEIF import. Mac Intel, Windows ARM and Linux ARM binaries are not included.
 
-[Sumy kontrolne SHA-256](dist/SHA256SUMS.txt) · [Licencja](LICENSE)
+[SHA-256 checksums](dist/SHA256SUMS.txt) · [License](LICENSE)
 
-## Zobacz WebDrop w akcji
+## See WebDrop in action
 
-![WebDrop na macOS w ciemnym motywie: wyniki seryjnej konwersji PNG i JPG do WebP oraz zachowany SVG](docs/screenshots/batch-dark-pl.jpg)
+![WebDrop on macOS in dark mode: batch PNG and JPG conversion to WebP, with SVG preserved](docs/screenshots/batch-dark-en.jpg)
 
-**Cała paczka w jednym oknie.** Format, szerokość i kompresja po prawej; wyniki oraz przyciski ponowienia po lewej. Zrzut pokazuje rzeczywiste wyniki dla plików demonstracyjnych — oszczędność zależy od obrazu i ustawień.
+**One window for the whole batch.** Format, width and compression on the right; results and re-run controls on the left. These are actual results from sample files — savings vary with the image and settings.
 
-[🍎 Pobierz na Maca](dist/WebDrop-macOS-arm64.zip?raw=true) · [🪟 Windows — wersja testowa](dist/WebDrop-Windows-x64.zip?raw=true) · [🐧 Linux — wersja testowa](dist/WebDrop-Linux-x64.tar.gz?raw=true)
+[🍎 Download for Mac](dist/WebDrop-macOS-arm64.zip?raw=true) · [🪟 Windows preview](dist/WebDrop-Windows-x64.zip?raw=true) · [🐧 Linux preview](dist/WebDrop-Linux-x64.tar.gz?raw=true)
 
-Mała aplikacja w Rust do lokalnej optymalizacji obrazów i seryjnej konwersji do WebP, AVIF i JPEG XL. GUI: egui/eframe. Bez serwera, konta i wysyłania zdjęć.
+A small desktop app for macOS, Windows and Linux for local image optimization and batch conversion to WebP, AVIF and JPEG XL. Built in Rust with egui/eframe. No accounts, server or image uploads.
 
-Domyślnie zapisuje **WebP, maksymalnie 1500 px szerokości, jakość 82, do Downloads**. Dodaj obrazy, dostosuj opcje i kliknij **Rozpocznij konwersję**. Samo dodanie plików nie uruchamia przetwarzania.
+The default export is **WebP, up to 1500 px wide, quality 82**, saved to **Downloads**. Add your files, adjust the settings, then click **Start conversion**. Adding files never starts processing automatically.
 
-Pliki są po lewej, opcje eksportu po prawej. Lista plików może się przewijać, prawa kolumna nie wymaga przewijania. **Ustawienia** z ikoną koła zębatego są w prawym górnym rogu. Presety **Na web** i **Logo** przyspieszają wybór opcji. Interfejs oferuje język polski i angielski oraz jasny, ciemny i systemowy wygląd.
+## Features
 
-Po zakończeniu użyj **Ponów** przy pliku lub **Ponów wszystkie**, zmień opcje i ponownie kliknij start. Oryginały i wcześniejsze wyniki pozostają na dysku; kolizje nazw otrzymują kolejny numer. Nowe pliki dodane podczas pracy czekają na następne zatwierdzenie.
+- Drag and drop images or entire folders (including subfolders), use the file picker, or open images through Finder’s **Open With → WebDrop**.
+- Optimize PNG, JPEG and WebP; import and export AVIF and JPEG XL.
+- Import PDF-compatible Illustrator files, PDF, TIFF and HEIC/HEIF using macOS frameworks.
+- Resize to a maximum width of **1500, 1000, 700 or 500 px**, or keep the original dimensions. Aspect ratio is preserved; smaller images are not enlarged.
+- Trim transparent or solid-color margins before resizing, including margins around logos.
+- Keep SVG files as SVG, with optional canvas trimming only. No SVG optimization or rasterization.
+- Remove source metadata from raster outputs, including EXIF, GPS, XMP, IPTC and embedded ICC profiles, after applying orientation and color conversion.
+- Save to Downloads, beside each source file, or in a custom folder. The destination is remembered between launches.
+- Re-run individual files, several chosen files, or the entire batch with new settings, using the originals.
+- Preserve source files and previous results. Name collisions receive a numeric suffix.
+- Polish and English interfaces, with the system language selected by default.
 
-## Miejsce zapisu
+## Getting started
 
-Pole **Zapisz w** nad przyciskiem startu oferuje:
+Download the archive for your system from the table above and extract it. Open the application inside.
 
-- **Downloads** — domyślny folder pobierania.
-- **Folder źródłowy / Same path** — każdy wynik obok swojego oryginału, również dla plików z różnych folderów w jednej paczce.
-- **Własny folder / Custom path** — wybór folderu przez natywne okno systemowe; **Wybierz…** pozwala go zmienić. Anulowanie okna pozostawia poprzedni wybór.
+1. Drop files or folders into the left column, click **Choose files**, or press **⌘O** on Mac or **Ctrl+O** elsewhere.
+2. Choose the format, width, margins, compression and destination in the right column.
+3. Click **Start conversion**. The app captures the settings and destination at this point.
+4. Click **↗** beside a result to open its location. Click a filename to see its details, encoder, output path or full error message.
 
-Tryb i ostatnia własna ścieżka są zapamiętywane w preferencjach macOS (`OutputDestination`) po ponownym uruchomieniu, niezależnie od języka. Powrót do Custom path przywraca ostatnio wybrany własny folder. Cel jest ustalany osobno dla każdego pliku przy kliknięciu **Rozpocznij konwersję**; zmiana w trakcie pracy dotyczy kolejnego startu, także po **Ponów**. Nie ma automatycznego przełączania do Downloads, gdy wybrany folder jest niedostępny — aplikacja pokaże błąd. Oryginały i wcześniejsze wyniki nigdy nie są nadpisywane; kolizje nazw otrzymują numer, np. `logo (1).webp`. Opcja CLI `--output` pozostaje niezależna od preferencji GUI.
+Files added while a batch is running wait for another explicit start. Changing settings does not alter jobs already submitted. Cancellation applies to the current batch and is checked between processing stages; an active encoder call finishes before cancellation takes effect.
 
-Na Windows i Linux język oraz miejsce zapisu są przechowywane w pliku `preferences.json` w katalogu konfiguracji użytkownika. Import dokumentów AI/PDF, TIFF i HEIC jest dostępny wyłącznie na macOS.
+After a batch finishes, use **Re-run** beside a file or **Re-run all** above the list. You can prepare several files by clicking **Re-run** beside each one. Adjust the options and click **Start conversion** again. Previous outputs remain on disk.
 
-## Język i informacje o aplikacji
+**Whole folders:** supported images are collected recursively in the background, with an option to cancel. Entries whose names start with a dot, symbolic links found inside folders and unsupported formats are skipped. Overlapping folders do not duplicate files already waiting in the queue. Unreadable entries are reported while accessible images are still added. Start conversion explicitly after scanning finishes. Downloads and Custom path place all results directly in the selected folder without recreating subfolders; Same path saves each result beside its original.
 
-W **Ustawienia → Ogólne → Język / Language** można wybrać **Systemowy** (domyślnie), **Polski · PL** lub **English · EN**. Tryb systemowy odczytuje preferowany język systemu: polski wybiera PL, pozostałe języki wybierają EN. Wybór działa od razu i jest zapamiętywany między uruchomieniami w preferencjach aplikacji (`local.imageoptimizer.desktop`, klucz `InterfaceLanguage`). Powrót do „Systemowy” usuwa ręczne ustawienie. Kontrolki, opisy, podpowiedzi oraz komunikaty wyników i błędów mają obie wersje językowe. Natywne okna macOS, np. wybór plików, używają języka systemowego. Nazwy plików i ścieżki pozostają niezmienione.
+### Presets
 
-**Ustawienia → O aplikacji** pokazuje wersję z metadanych Cargo, autora **Jędrzeja Czarneckiego**, kontakt [info@ebest.pl](mailto:info@ebest.pl) i stronę [ebest.pl](https://ebest.pl). Aplikacja jest bezpłatna i open source na licencji **GNU GPL v3 lub nowszej**. Można korzystać z niej prywatnie i komercyjnie, modyfikować oraz rozpowszechniać zgodnie z warunkami GPL, w tym obowiązkiem udostępnienia kodu źródłowego przy rozpowszechnianiu. Bez gwarancji. Pełna licencja i licencje bibliotek są dostępne z tego panelu i dołączone do paczki aplikacji.
+![WebDrop on macOS in light mode: an AI logo awaiting confirmation, with the Logo preset, lossless WebP and margin trimming selected](docs/screenshots/logo-light-en.jpg)
 
-## Uruchomienie
+*Light mode and the Logo preset: choose trimming and lossless WebP before starting. AI/PDF import is available on macOS.*
 
-Pobierz paczkę dla swojego systemu z tabeli na górze, rozpakuj ją i otwórz aplikację.
-
-1. Przeciągnij pliki lub całe foldery do okna, użyj **Wybierz pliki…** / **⌘O** albo wybierz w Finderze **Otwórz w aplikacji → WebDrop**.
-2. Dodane pliki czekają. Ustaw format, rozmiar i trim, następnie kliknij **Rozpocznij konwersję**. Domyślnie: **WebP, maks. 1500 px szerokości, jakość 82**.
-3. Wyniki domyślnie trafiają do **Downloads**. W polu **Zapisz w** możesz wybrać **Folder źródłowy** (Same path) lub **Własny folder** (Custom path). Przycisk **↗** przy wyniku pokazuje plik w Finderze. Kliknięcie nazwy pliku otwiera szczegóły, w tym pełny komunikat błędu, użyty silnik, informacje o konwersji i ścieżkę wyniku.
-
-**Całe foldery:** aplikacja zbiera obsługiwane obrazy także ze wszystkich podfolderów. Wyszukiwanie odbywa się w tle i można je anulować. Pomijane są pliki i foldery o nazwach zaczynających się od kropki, dowiązania znalezione wewnątrz folderów oraz nieobsługiwane formaty. Nakładające się foldery nie dodają tego samego pliku ponownie do oczekującej kolejki. Brak dostępu do części zawartości jest zgłaszany, a pozostałe obrazy nadal trafiają do listy. Konwersję zatwierdzasz przyciskiem po zakończeniu wyszukiwania. Przy zapisie do Downloads lub własnego folderu wyniki trafiają bezpośrednio do niego; struktura podfolderów nie jest odtwarzana. Same path zapisuje każdy wynik obok oryginału.
-
-Format wybierasz z listy z opisami, a szerokość segmentami pod presetami. **Na web** przywraca WebP stratny, jakość 82, szerokość do 1500 px i wyłączony trim. **Logo** wybiera WebP bezstratny, szerokość do 1500 px i trim tła oraz przezroczystości. Aktywny preset jest wyróżniony; po zmianie jego głównych ustawień wyróżnienie znika. Wiersz **Kompresja** pokazuje tryb WebP/AVIF/JXL i edytowalną jakość, wybór silnika PNG lub jakość JPG. „Pełna” oznacza brak zmiany wymiarów. Duża strefa przeciągania zmniejsza się po dodaniu plików, zostawiając miejsce na kolejkę, pasek postępu i wyniki. **⌘,** otwiera ustawienia kompresji, importu, języka i wyglądu; **⌘O** dodaje pliki. Okno można przeciągać za środek paska tytułowego. Motyw i ustawienia eksportu wracają do wartości domyślnych po ponownym uruchomieniu.
-
-Od wersji 0.4.2 aplikacja obsługuje systemowe „Otwórz w aplikacji” dla PNG, JPG, WebP, AVIF, JXL, TIFF, HEIC/HEIF, AI, PDF i SVG, także dla wielu plików naraz i podczas działania aplikacji. Pliki trafiają do kolejki i czekają na przycisk **Rozpocznij konwersję**, także przy otwarciu z Findera i podczas trwania innej konwersji. Ustawienia są pobierane w momencie kliknięcia startu (przy nowym uruchomieniu: WebP/1500 px). Rejestruje się jako dodatkowa aplikacja, bez zmiany domyślnego programu do otwierania obrazów.
-
-Od wersji 0.5.1 opcja **Marginesy** oznacza przycinanie (trim). Pod formatem, marginesami i kompresją widać opis aktualnego wyboru. Listy rozwijane objaśniają poszczególne tryby. **Nie przycinaj** zachowuje wszystkie brzegi; **Przytnij przezroczyste brzegi** zostawia białe tło; **Przytnij jednolite tło i przezroczystość** rozpoznaje kolor tła po narożnikach i przycina zewnętrzne marginesy, bez usuwania tła ze środka logo. Ustawienia **Import** opisują DPI, numer strony i tolerancję oraz wpływ tolerancji na delikatne cienie. Reguły dla SVG pozostają osobne: wyłącznie zmiana obszaru dokumentu.
-
-### Logo AI → przycięty WebP
-
-![WebDrop na macOS w jasnym motywie: logo AI czekające na start, preset Logo, bezstratny WebP i przycinanie marginesów](docs/screenshots/logo-light-pl.jpg)
-
-*Jasny motyw i preset Logo: ustaw trim oraz bezstratny WebP przed kliknięciem startu. Import AI/PDF jest dostępny na macOS.*
-
-Dodaj plik `.ai`, wybierz **Logo**, a następnie kliknij **Rozpocznij konwersję**. Ten preset ustawia bezstratny WebP, trim jednolitego tła i przezroczystych marginesów oraz maks. 1500 px. Wynik trafia do wybranego folderu (domyślnie Downloads) pod nazwą logo z rozszerzeniem `.webp`.
-
-- **Trim: przezroczyste marginesy** przycina do widocznych pikseli (ignoruje ukryte RGB pod alfą).
-- **Trim: jednolite tło + alfa** dodatkowo przycina marginesy w kolorze narożników, jeśli wszystkie cztery narożniki są zgodne. Nadaje się np. do logo na białym tle. Gdy narożniki są różne, przycinane są tylko przezroczyste marginesy.
-- Trim działa **przed zmianą rozmiaru**, zachowuje proporcje i nie usuwa tła wewnątrz logo. Całkowicie pusty/jednolity obraz pozostaje w swoim rozmiarze. Tolerancja 0–64 w ustawieniach kompresji kontroluje ignorowanie drobnych różnic i prawie przezroczystych pikseli (domyślnie 8).
-- Trim jest domyślnie wyłączony dla zwykłych zdjęć. Preset logo należy wybrać **przed kliknięciem Rozpocznij konwersję**; nie zmienia już rozpoczętych zadań.
-
-**Dodatkowe wejścia na macOS:** AI, PDF, TIF/TIFF, HEIC/HEIF. Import używa wbudowanych w macOS Image I/O i Core Graphics, bez dodatkowej instalacji. AI/PDF renderowane są na przezroczystym tle w sRGB, domyślnie 300 DPI. Ustawienia pozwalają wybrać 72/144/300/600 DPI i numer strony/artboardu AI/PDF lub strony wielostronicowego TIFF; domyślnie strona 1. HEIC używa obrazu głównego (pomija pomocnicze obrazy głębi). Wskazówka po najechaniu na wynik pokazuje stronę, DPI oraz rozmiary przed i po trim.
-
-**AI musi być zapisany z [Create PDF Compatible File](https://helpx.adobe.com/illustrator/using/saving-artwork.html).** Starsze AI oparte na PostScript i pliki bez zawartości PDF wymagają ponownego zapisu w Illustratorze lub eksportu do PDF. Aplikacja wykrywa standardową stronę ostrzeżenia Illustratora zamiast konwertować ją do obrazu. Importowane są widoczne dane osadzone w pliku, bez edycji warstw Illustratora. Dokumenty z hasłem wymagają odblokowanej kopii. Dla bardzo dużych stron zmniejsz DPI, aby zmieścić się w limicie 64 megapikseli.
-
-`zdjęcie.png` → `~/Downloads/zdjęcie.webp`. Oryginały nie są nadpisywane. Gdy wynik już istnieje, powstaje `zdjęcie (1).webp`, następnie `(2)` itd. Dotyczy to także plików z różnych katalogów o tej samej nazwie. Zapis jest atomowy i odporny na kolizje między instancjami aplikacji.
-
-### SVG — wyłącznie trim, bez optymalizacji
-
-Przeciągnij SVG tak jak pozostałe pliki. **SVG zawsze zapisuje się jako SVG**, również przy wybranym WebP, presecie „Logo” i szerokości 1500 px. Format, szerokość, jakość i algorytmy kompresji nie wpływają na SVG. Można mieszać SVG ze zdjęciami w jednej kolejce.
-
-- **Trim wyłączony:** kopia identyczna bajt w bajt, bez usuwania metadanych i zmiany kodu.
-- **Dowolny włączony tryb trim:** przycięcie pustego obszaru przez zmianę wyłącznie `viewBox`, `width` i `height` głównego elementu SVG. Ścieżki, grupy, kolory, obrysy, definicje, komentarze i metadane pozostają w oryginalnym zapisie. Wymiary płótna zachowują dotychczasową skalę grafiki. Nie ma rasteryzacji ani usuwania białych prostokątów/tła. Tolerancja trim nie dotyczy SVG.
-- Granice obejmują obrysy i transformacje. Przycięcie jest konserwatywne: zaokrągla obszar na zewnątrz, a clipPath może pozostawić dodatkowy margines. Pusty lub już przycięty dokument pozostaje bez zmian.
-- Automatyczny trim obsługuje statyczne ścieżki i figury, grupy, lokalne odwołania, gradienty i proste klasy CSS (np. `.st0` z Illustratora). Tekst zależny od fontów, animacje, filtry, maski, osadzone/zewnętrzne obrazy, zagnieżdżone obszary SVG, responsywne CSS i względne wymiary geometrii są odrzucane z czytelnym komunikatem **przed zapisem wyniku**. Takie SVG można skopiować z wyłączonym trim; tekst można wcześniej zamienić na krzywe w edytorze.
-
-Wynik: `~/Downloads/logo.svg`; istniejące pliki i źródła są chronione tak samo jak przy innych formatach. Wymagany poprawny SVG w UTF-8, do 128 MB / 100 tys. węzłów XML. Parser nie pobiera zewnętrznych zasobów. Biblioteka usvg służy jedynie do pomiaru — jej przekształcony dokument nigdy nie jest zapisywany.
-
-## Ustawienia
-
-- Format: **WebP**, **AVIF**, **JPEG XL**, **Oryginalny**, **PNG**, **JPG**. Oryginalny zachowuje PNG/JPG/WebP/AVIF/JXL; AI/PDF/TIFF/HEIC eksportuje jako WebP, z informacją przy wyniku. SVG zawsze pozostaje SVG niezależnie od tej opcji.
-- Szerokość: **1500, 1000, 700, 500 px** lub oryginalna. Wysokość proporcjonalna; bez powiększania małych obrazów.
-- WebP: stratny, bezstratny lub prawie bezstratny. Jakość w trybie prawie bezstratnym określa zachowanie szczegółów; tryb bezstratny ignoruje suwak jakości.
-- PNG: bezstratny OxiPNG, stratna paleta libimagequant + OxiPNG lub bezstratny OxiPNG + Zopfli.
-- Dokładniejsza kompresja: wyższy nakład obliczeń, szczególnie dla WebP/PNG. Zopfli może trwać zauważalnie dłużej.
-
-Ustawienia są przypisywane do pliku po kliknięciu przycisku startu. Nie zmieniają już trwającego zadania. Po ponownym uruchomieniu wracają domyślne WebP/1500 px. Anulowanie jest sprawdzane między etapami dekodowania, skalowania i kodowania; aktualne wywołanie kodera kończy się przed anulowaniem. Zakończone pliki pozostają na dysku.
-
-## Silniki
-
-Aktualne wersje zależności są zapisane w `Cargo.lock`; wybór sprawdzony 28.10.2026.
-
-| Format / etap | Implementacja |
+| Preset | Settings |
 | --- | --- |
-| PNG bezstratny | [OxiPNG](https://github.com/oxipng/oxipng): redukcja palety, głębi, koloru i dobór filtrów, libdeflate |
-| PNG dokładny | OxiPNG + [Zopfli](https://github.com/google/zopfli) DEFLATE |
-| PNG z paletą | [libimagequant](https://pngquant.org/lib/): kwantyzacja RGBA, dithering, następnie OxiPNG |
-| JPEG | [MozJPEG](https://github.com/mozilla/mozjpeg): progresywny JPEG, optymalizacja skanów, kodowania i kwantyzacji |
-| WebP | [libwebp 1.6](https://developers.google.com/speed/webp/docs/api), przez `libwebp-sys 0.14.4`: lossy/lossless/near-lossless, sharp YUV, pełna jakość alfa |
-| Skalowanie | Lanczos3 w liniowym świetle, premultiplikowana alfa, bez ciemnych obwódek |
-| Kolory | Little CMS: osadzony profil ICC RGB/grayscale → sRGB przed ponownym kodowaniem |
-| SVG trim | [usvg 0.49](https://docs.rs/usvg/0.49.0/usvg/) do pomiaru granic; roxmltree do wskazania zakresów atrybutów; zapis bez serializacji/optymalizacji SVG |
+| **For the web** | Lossy WebP, quality 82, maximum width 1500 px, no trimming |
+| **Logo** | Lossless WebP, maximum width 1500 px, solid-background and transparent-margin trimming |
 
-Żaden algorytm nie daje najmniejszego pliku dla każdego obrazu. Konwersja i kompresja stratna mogą czasem utworzyć większy plik; interfejs pokazuje rzeczywisty wynik, także wzrost rozmiaru.
+“Lossless” describes encoding of the prepared pixels. It does not make resizing, rasterization or color-space conversion lossless. A lossless WebP can be smaller than a lossy one for some logos; no encoder or quality setting produces the smallest file for every image.
 
-**Od wersji 0.4.1 każdy wynik PNG/JPG/WebP/AVIF/JXL jest zapisywany bez metadanych**: EXIF/GPS, XMP/IPTC, komentarzy, autora, dat, miniaturek, rozdzielczości/DPI i osadzonych profili ICC. Dotyczy to wszystkich ustawień, także „Oryginalny”, braku skalowania, bezstratnego PNG oraz wejść AI/PDF/TIFF/HEIC. Nie ma przełącznika pozwalającego zachować metadane. Oryginalne pliki pozostają nietknięte. Reguła dotyczy zawartości obrazu, nie systemowych dat utworzenia nowego pliku.
+### Output destination
 
-Przed usunięciem metadanych stosowana jest orientacja EXIF oraz konwersja kolorów do sRGB. PNG z ICC, gAMA/cHRM lub cICP Display P3 jest przeliczany przed usunięciem tych bloków. PNG z nieobsługiwanym cICP/HDR jest odrzucany z komunikatem zamiast utraty informacji o kolorach. Bez skalowania i trim bezstratny PNG zachowuje 16-bitową precyzję również przy konwersji ICC. OxiPNG używa `StripChunks::All`. Pozostają tylko bloki kodujące obraz, paletę i przezroczystość. Wyniki PNG/WebP są dodatkowo sprawdzane przed zapisem; JPG nie zawiera nawet opcjonalnych segmentów APP/COM, w tym JFIF. Przezroczystość pozostaje w PNG/WebP/AVIF/JXL; JPEG używa białego tła. Bezstratność kodowania nie oznacza bezstratności zmiany rozmiaru ani konwersji przestrzeni barw.
+Use **Save to** above the start button:
 
-**Wyjątek: SVG**, zgodnie z zasadą zachowania jego oryginalnej zawartości. SVG zachowuje także metadane — jedyną dozwoloną zmianą pozostaje trim obszaru dokumentu.
+| Option | Behavior |
+| --- | --- |
+| **Downloads** | The default Downloads folder |
+| **Same path** | Each result is saved beside its original, even when a batch contains files from different folders |
+| **Custom path** | Choose a folder in the native file dialog; use **Choose…** to change it |
 
-Animowane PNG/WebP/AVIF/JXL są odrzucane z komunikatem zamiast utraty animacji. Obsługiwane wejście: statyczne PNG/JPG/WebP/AVIF/JXL, AI/PDF, TIFF i HEIC/HEIF, maks. 128 MB i 64 megapiksele (dla dokumentów: na renderowaną stronę). Profile CMYK/niestandardowe w dotychczasowym dekoderze JPG/PNG są odrzucane, jeśli nie można bezpiecznie wykonać konwersji; import macOS wykonuje konwersję kolorów do sRGB przez Core Graphics. WebP ma limit 16383 px na bok. Obrazy bez informacji o przestrzeni kolorów traktowane są jako sRGB. Skalowanie i trim przetwarzają obrazy w 8 bitach na kanał. HEIC HDR jest eksportowany jako 8-bitowy obraz SDR; dodatkowe dane HDR/głębi nie są zachowywane.
+The app remembers both the selected mode and the last custom path. Cancelling the folder picker leaves the previous choice intact. Selecting Custom path again restores the previously chosen folder.
 
-## Budowanie i sprawdzanie
+The destination is captured separately for each file when you start a batch. A later change applies to the next start, including a re-run. If the chosen folder cannot be used, the app reports an error instead of silently switching to Downloads.
 
-Wymagane do budowania: macOS, Xcode Command Line Tools, Rust 1.95+ (zalecany stable), biblioteki `libavif` i `jpeg-xl` z Homebrew (`brew install libavif jpeg-xl`). Gotowa aplikacja zawiera biblioteki i nie wymaga Homebrew. Obecny pakiet wymaga macOS 15+ ze względu na wersje bibliotek; skrypt ustawia minimalny system zgodnie z dołączonymi bibliotekami.
+For example, with the default destination:
+
+```text
+photo.png → ~/Downloads/photo.webp
+            ~/Downloads/photo (1).webp  # if the first name already exists
+```
+
+Writes are atomic and do not overwrite existing files, including when multiple app instances produce the same name. The CLI’s `--output` option is independent of GUI preferences.
+
+## Formats and compression
+
+| Output | Options / engine |
+| --- | --- |
+| **WebP** | libwebp: lossy, lossless or near-lossless encoding; lossless alpha |
+| **AVIF** | libavif + AOM: lossy or lossless, 4:4:4 color, lossless alpha |
+| **JPEG XL** | libjxl: lossy or lossless, lossless alpha, preservation of invisible RGB values |
+| **PNG** | Lossless OxiPNG; lossy libimagequant palette reduction followed by OxiPNG; or lossless OxiPNG + Zopfli |
+| **JPG** | MozJPEG progressive encoding; transparency is composited onto white |
+| **Original** | Keeps PNG/JPG/WebP/AVIF/JXL; exports AI/PDF/TIFF/HEIC as WebP. SVG always stays SVG |
+
+Quality values are not equivalent between codecs. The lossless WebP, AVIF and JXL modes ignore the quality slider. Near-lossless WebP uses it to control how much pixel detail is retained. **More thorough compression** increases encoding effort; Zopfli can take noticeably longer.
+
+Resizing uses Lanczos3 in linear light with premultiplied alpha to avoid dark edges. Little CMS handles supported embedded color profiles before export to sRGB. Rust dependency versions are recorded in [Cargo.lock](Cargo.lock); native AVIF/JXL libraries come from Homebrew on macOS, Debian packages on Linux, and MSYS2 packages on Windows. Portable archives include `native-packages.json` with package URLs and checksums.
+
+### AI/PDF, TIFF and HEIC imports
+
+Available only in the macOS build. Import uses macOS Image I/O and Core Graphics. No separate converter is needed by the packaged app.
+
+- AI/PDF pages are rasterized onto a transparent background in sRGB, at **300 DPI** by default. Import settings offer 72, 144, 300 and 600 DPI, plus a page/artboard number.
+- Multipage TIFF supports page selection. HEIC uses the primary image and ignores auxiliary depth images.
+- **AI files must contain PDF-compatible data**, usually saved with Illustrator’s **Create PDF Compatible File** option. Older PostScript-based AI files or files without embedded PDF data must first be saved in a compatible form or exported to PDF.
+- The app detects Illustrator’s standard warning page instead of converting it as artwork. It imports the visible embedded document, not editable Illustrator layers.
+- Password-protected documents require an unlocked copy. Reduce DPI for very large pages to stay within the 64-megapixel limit.
+
+To convert a logo, add its `.ai` or `.pdf` file, choose **Logo**, then click **Start conversion**. The result is a trimmed, lossless WebP in the selected destination.
+
+### Trimming margins
+
+- **Do not trim** keeps all edges, including white and transparent margins.
+- **Trim transparent edges** crops empty transparent margins. White backgrounds remain.
+- **Trim solid and transparent edges** also crops margins matching the corner color when all four corners agree. If the corners differ, only transparent margins are trimmed.
+
+Trimming happens **before resizing**. It removes outside margins, not the background inside a logo. Completely empty or uniform images keep their dimensions. The tolerance setting in **Settings → Import** ranges from 0 to 64, with a default of 8, and controls how small color differences and nearly transparent pixels are treated.
+
+### SVG: trimming only
+
+**SVG always remains SVG**, even with WebP selected or the Logo preset enabled. Raster format, width, quality and compression settings do not apply to SVG.
+
+- With trimming disabled, the output is a **byte-for-byte copy**, including metadata.
+- With either trimming mode enabled, only the root element’s **`viewBox`, `width` and `height`** may change. Paths, groups, colors, strokes, definitions, comments and metadata retain their original representation.
+- Trimming does not rasterize the image, remove white background shapes or apply the raster trim tolerance.
+- Bounds include strokes and transforms. Cropping is conservative and rounds outwards; clipping paths may leave extra margins. Empty or already trimmed documents remain unchanged.
+- Automatic trimming supports static paths and shapes, groups, local references, gradients and simple CSS classes. Font-dependent text, animations, filters, masks, embedded/external images, nested SVG viewports, responsive CSS and relative geometry dimensions are rejected before writing a result. These SVGs can still be copied with trimming disabled; text can be converted to outlines in an editor first.
+
+SVG input must be valid UTF-8 and stay within the 128 MB / 100,000 XML-node limits. The parser does not fetch external resources. `usvg` is used only to measure bounds; its transformed document is never serialized into the output.
+
+## Metadata, color and limits
+
+Raster outputs are always written without copied EXIF/GPS, XMP/IPTC, comments, author information, dates, thumbnails, DPI metadata or source ICC profiles. This includes **Original** mode, lossless encoding and imports from AI/PDF/TIFF/HEIC. There is no option to retain source metadata. Source files are unchanged; filesystem creation timestamps are separate from image metadata.
+
+Orientation and supported color profiles are applied before metadata is removed. AVIF retains its structural sRGB color description; JXL retains the color parameters required to decode its pixels. These are not copied source metadata. **SVG is the exception**: its contents, including metadata, are preserved, apart from the optional viewport changes described above.
+
+Other limits:
+
+- Static inputs only. Animated PNG, WebP, AVIF and JXL are rejected rather than flattened silently.
+- Maximum input size: **128 MB** and **64 megapixels**, per rendered page for documents. WebP has a maximum dimension of **16,383 px** per side.
+- AVIF/JXL output is **8-bit SDR sRGB**. Their import paths reject unsupported HDR, profiles and animations. HEIC HDR is exported as an 8-bit SDR image without auxiliary HDR/depth data.
+- Images without color-space information are treated as sRGB. Unsupported color configurations are rejected when they cannot be converted safely.
+- Trimming and resizing operate at 8 bits per channel. Lossless PNG without trimming or resizing preserves 16-bit precision, including supported ICC conversion.
+- Conversion can produce a larger file. The UI reports the actual output size, including increases.
+
+## Interface and preferences
+
+Files appear on the left and export options on the right. The right column requires no scrolling; the file list can scroll. **Settings**, with a gear icon, is available in the top-right corner or through **⌘,**.
+
+The interface uses **egui/eframe**, with native file/folder dialogs, San Francisco on macOS and bundled egui fonts on Windows/Linux. Its controls are custom drawn, not SwiftUI/AppKit or Liquid Glass controls. The system font is loaded locally and is not distributed with the app. The default window is 1000 × 780 px; the minimum is 920 × 720 px.
+
+In **Settings → General → Language**, choose **System**, **Polski · PL** or **English · EN**. System mode selects Polish for a Polish system language and English otherwise. The choice takes effect immediately and is remembered. Native dialogs use the system language; filenames and paths are never translated.
+
+Language and output destination persist between launches. Export settings and appearance return to their defaults. Preferences use the macOS domain `local.imageoptimizer.desktop`, with keys `InterfaceLanguage` and `OutputDestination`. Windows and Linux use `preferences.json` in the user configuration directory (`%APPDATA%/ebest/WebDrop/config` on Windows and `$XDG_CONFIG_HOME/webdrop` or `~/.config/webdrop` on Linux).
+
+## Building from source
+
+Build requirements:
+
+- macOS and Xcode Command Line Tools
+- Rust **1.95 or newer**
+- Homebrew libraries: `libavif` and `jpeg-xl`
+- Python 3 for packaging scripts
+
+From the repository directory:
 
 ```sh
+brew install libavif jpeg-xl
 ./scripts/cargo.sh test --locked
 ./scripts/cargo.sh run --release
 ./scripts/bundle.sh
 open "dist/WebDrop.app"
 ```
 
-Skrypt `cargo.sh` używa lokalnego toolchaina w `.tools`, jeśli istnieje, w przeciwnym razie systemowego Cargo. Bundlowanie tworzy ikonę i lokalny podpis ad-hoc. Publiczna dystrybucja wymaga osobnego podpisu Developer ID i notaryzacji.
+`scripts/cargo.sh` uses a project-local toolchain in `.tools` when present, otherwise the system Cargo installation. Set `WEBDROP_BREW_PREFIX` if Homebrew is installed outside its usual location.
 
-Testy obejmują formaty i silniki, bezstratny round-trip RGBA dla AVIF/JXL (również ukryte RGB i częściowa alfa), jakość stratną, import AVIF/JXL, orientację, usuwanie metadanych i odrzucanie animacji/HDR, batch PNG/JPG → WebP, orientację EXIF, kolory ICC, przezroczystość, brak ciemnych obwódek, PNG 16-bit, skalowanie, uszkodzone pliki, animacje, anulowanie i równoczesne kolizje nazw.
+The bundle script creates `dist/WebDrop.app`, generates its icon, copies native codec libraries into `Contents/Frameworks`, rewrites their library paths, includes license notices and applies a local ad-hoc signature. The packaged app does not require Homebrew. Developer ID signing and notarization are separate from this build workflow.
 
-Testy importu obejmują także rzeczywiste syntetyczne pliki HEIC/TIFF, obrót HEIC, wielostronicowy TIFF, rasteryzację zgodnego AI/PDF, wybór strony, DPI, obrót PDF, wykrywanie strony ostrzeżenia Illustratora oraz trim przed skalowaniem. Dekoder HEIC wymaga dostępu do systemowych usług multimedialnych macOS — uruchamiaj te testy poza restrykcyjnym sandboxem. Pliki testowe w `tests/fixtures` nie zawierają danych użytkownika; generator znajduje się w `scripts/make-test-fixtures.swift`.
+The current bundle requires **macOS 15 or newer**, based on the native libraries used to build it. The script derives the minimum system version from the bundled libraries. An Apple Silicon build is for Apple Silicon; build locally on an Intel Mac for that architecture.
 
-Testy SVG sprawdzają identyczność bajtów przy wyłączonym trim, zmianę wyłącznie atrybutów obszaru dokumentu, kolizje nazw, anulowanie oraz odmowę niebezpiecznego trim. Porównują też piksel po pikselu render oryginału i przyciętego SVG: obrysy, transformacje, gradienty, CSS, clipPath, przesunięty viewBox i różne preserveAspectRatio. Renderer resvg jest zależnością wyłącznie testową.
+### Windows and Linux cross builds
 
-Testy metadanych używają syntetycznych PNG/JPG/WebP/AVIF/JXL z EXIF/GPS, XMP, IPTC, ICC, DPI i komentarzami. Sprawdzają brak bloków metadanych we wszystkich koderach, także przy bezpośrednim PNG i zapisie „Oryginalny”, oraz poprawną orientację, alfę, konwersję gamma/Display P3 i 16-bitowy RGB/grayscale. Nieobsługiwany cICP/HDR nie tworzy wyniku.
-
-### AVIF i JPEG XL
-
-Eksport i import statycznych `.avif` i `.jxl`, także batch i przez „Otwórz w aplikacji”. Oba formaty obsługują trim przed skalowaniem, przezroczystość i zapis do wybranego folderu (domyślnie Downloads) bez nadpisywania oryginałów. „Oryginalny” zachowuje format AVIF/JXL. SVG nadal pozostaje SVG.
-
-- **AVIF**: libavif + AOM, pełna rozdzielczość koloru 4:4:4, alfa bezstratna. Tryb bezstratny używa odwracalnego przekształcenia RGB i jakości 100.
-- **JPEG XL**: libjxl, tryb stratny z jakością przeliczaną przez `JxlEncoderDistanceFromQuality`, albo prawdziwy tryb bezstratny. Alfa jest bezstratna, a niewidoczne kolory są zachowywane.
-- **Jakość 1–100** dotyczy trybu stratnego i ma inną skalę w każdym kodeku. „Dokładniejsza kompresja” zwiększa nakład obliczeń. Bezstratność dotyczy pikseli po konwersji do 8-bitowego sRGB, przycięciu i skalowaniu, nie oryginału HDR/16-bit.
-- **Metadane**: kodery dostają wyłącznie piksele, bez EXIF/GPS, XMP/IPTC, dat, komentarzy i źródłowych profili ICC. AVIF zachowuje strukturalny opis kolorów sRGB (CICP/nclx), a JXL własne parametry koloru konieczne do poprawnego dekodowania. To nie są kopiowane dane źródłowe. JXL zapisywany jest jako czysty strumień bez kontenera z metadanymi.
-- **Import**: stosuje obrót/odbicie i kolory przed usunięciem metadanych; JXL używa CMS libjxl, AVIF obsługuje ICC oraz sRGB/BT.709/Display P3 w SDR. Wyjście jest 8-bitowe. Nieobsługiwane profile, HDR i animacje są odrzucane z komunikatem, zamiast cichej utraty klatek lub obcięcia HDR.
-
-Skrypt `bundle-codecs.py` kopiuje zależności kodeków do `Contents/Frameworks`, przepisuje ścieżki bibliotek na lokalne, podpisuje je i dodaje licencje do informacji o bibliotekach. `WEBDROP_BREW_PREFIX` pozwala wskazać inną instalację Homebrew podczas budowania i pakowania.
+The cross-build scripts run on **Apple Silicon macOS** with Rust, `rustup`, Python 3 and Xcode Command Line Tools. They fetch pinned Zig 0.15.2 plus SHA-256-verified Debian 13/MSYS2 packages into `.tools/cross`. Package versions and URLs are recorded in each archive. Windows uses the GNU target; Linux uses glibc 2.41. C-code fallbacks avoid requiring AVX-512.
 
 ```sh
-./scripts/cargo.sh run --release -- --batch --format avif --quality 75 foto.jpg
-./scripts/cargo.sh run --release -- --batch --format jxl --quality 85 foto.jpg
-./scripts/cargo.sh run --release -- --batch --format avif --avif-lossless --trim transparent logo.png
-./scripts/cargo.sh run --release -- --batch --format jxl --jxl-lossless --trim background logo.ai
-./scripts/cargo.sh run --release -- --batch photo.avif photo.jxl
+./scripts/prepare-cross.sh
+./scripts/build-cross.sh linux
+./scripts/build-cross.sh windows
+./scripts/cargo.sh fetch --locked
+./scripts/bundle.sh
+./scripts/package-release.sh
 ```
 
-Syntetyczne próbki orientacji, animacji i HDR w `tests/fixtures/modern-*` generuje `scripts/make-modern-fixtures.c`, linkowany do libavif i libjxl. Nie zawierają danych użytkownika.
+Run the macOS bundle step before packaging: it generates the shared third-party notices. The package script includes the native library dependency closure and licenses, and fails if a required non-system library is missing. Linux uses an `$ORIGIN/lib` RPATH so nested codec dependencies resolve inside the archive. Windows and Linux use a JSON preferences file and their own system file-opening commands. They do not include the macOS-only document decoder.
 
-### Tryb terminalowy
+These scripts produce actual executable archives, but successful cross-compilation does not replace target-system testing. Test GUI launch, drag-and-drop, file dialogs, encoding, preferences and output folders on Windows/Linux before labeling them stable. All download archives and `SHA256SUMS.txt` in `dist` are intentionally included in Git; build caches and the unpacked `.app` are ignored. Keep only the current archives. Upload the repository together with these files for the relative download links above to work on GitHub.
 
-Komunikaty CLI, podsumowania i uwagi są zawsze po angielsku, niezależnie od języka systemu i GUI. Nazwy plików i ścieżki pozostają bez zmian.
-
-Ten sam silnik jest dostępny bez GUI:
+### Validation
 
 ```sh
-./scripts/cargo.sh run --release -- --batch foto.png foto.jpg
-./scripts/cargo.sh run --release -- --batch --width 700 --quality 85 foto.jpg
-./scripts/cargo.sh run --release -- --batch --format png --png-mode zopfli --width 0 grafika.png
-./scripts/cargo.sh run --release -- --batch --webp-mode lossless --output /tmp/wyniki grafika.png
+./scripts/cargo.sh fmt --check
+./scripts/cargo.sh clippy --locked --all-targets -- -D warnings
+./scripts/cargo.sh test --locked
+```
+
+Tests cover encoders, AVIF/JXL lossless RGBA round-trips, lossy quality, metadata removal, orientation and color conversion, transparency, 16-bit PNG, resizing, trimming, corrupt input, cancellation, concurrent filename collisions and native AI/PDF/TIFF/HEIC imports. SVG tests check byte preservation, viewport-only changes, unsupported cases and rendered output using the test-only `resvg` dependency.
+
+GUI logic tests cover explicit start, re-runs, destination capture and persistence, and sidebar layout in Polish and English. Native HEIC tests need access to macOS media services, and preference tests write to a separate test domain. Run these tests outside a restrictive sandbox. Fixtures under `tests/fixtures` are synthetic and contain no user data; generators are in `scripts/make-test-fixtures.swift` and `scripts/make-modern-fixtures.c`.
+
+## Command-line mode
+
+The same engine is available without the GUI. `--batch` starts processing immediately; `--output` defaults to Downloads and does not use the saved GUI destination.
+
+```sh
+# Default WebP batch: maximum width 1500 px, quality 82
+./scripts/cargo.sh run --release -- --batch photo.png photo.jpg
+
+# Resize and choose quality
+./scripts/cargo.sh run --release -- --batch --width 700 --quality 85 photo.jpg
+
+# Lossless PNG with Zopfli; preserve original dimensions
+./scripts/cargo.sh run --release -- --batch --format png --png-mode zopfli --width 0 artwork.png
+
+# Lossless WebP in a custom folder
+./scripts/cargo.sh run --release -- --batch --webp-mode lossless --output /tmp/webdrop-output artwork.png
+
+# Trim an Illustrator logo, or render page 2 of a PDF
 ./scripts/cargo.sh run --release -- --batch --trim background --webp-mode lossless logo.ai
 ./scripts/cargo.sh run --release -- --batch --trim transparent --vector-dpi 300 --page 2 logo.pdf
-./scripts/cargo.sh run --release -- --batch photo.heic scan.tiff
+
+# AVIF and JPEG XL
+./scripts/cargo.sh run --release -- --batch --format avif --quality 75 photo.jpg
+./scripts/cargo.sh run --release -- --batch --format jxl --quality 85 photo.jpg
+./scripts/cargo.sh run --release -- --batch --format avif --avif-lossless --trim transparent logo.png
+./scripts/cargo.sh run --release -- --batch --format jxl --jxl-lossless --trim background logo.ai
+
+# Import other formats, or trim an SVG without converting it
+./scripts/cargo.sh run --release -- --batch photo.heic scan.tiff photo.avif photo.jxl
 ./scripts/cargo.sh run --release -- --batch --trim transparent logo.svg
+
+./scripts/cargo.sh run --release -- --help
 ```
 
-Nieudany plik nie przerywa pozostałych zadań batch, ale powoduje niezerowy kod wyjścia. `--help` pokazuje wszystkie opcje.
+A failed file does not stop the rest of a batch, but it causes a nonzero exit code. CLI diagnostics, conversion summaries and notes are always in English, regardless of the system or GUI language. Filenames and paths remain unchanged.
 
-Licencja projektu: GPL-3.0-or-later; zależności zachowują własne licencje (w tym libimagequant GPL-3.0-or-later).
+## Author and license
 
-## Budowanie Windows i Linux
+**Jędrzej Czarnecki** · [info@ebest.pl](mailto:info@ebest.pl) · [ebest.pl](https://ebest.pl)
 
-Instrukcje kompilacji obu wersji na Apple Silicon znajdują się w [angielskim README](README.en.md#windows-and-linux-cross-builds). Skrypty pobierają zależności, sprawdzają ich SHA-256 i dołączają biblioteki oraz licencje do paczek. Wersje Windows/Linux wymagają jeszcze testów działania na docelowych systemach przed uznaniem za stabilne.
+WebDrop is free and open-source software under **GNU GPL v3 or later**. See [LICENSE](LICENSE) for the terms, including source-code obligations when distributing the software. The software is provided without warranty.
 
-Archiwa w `dist` i plik `SHA256SUMS.txt` są przeznaczone do dodania do repozytorium. Wyjątki w `.gitignore` pozwalają je opublikować; rozpakowana aplikacja i pliki robocze pozostają ignorowane. Linki pobierania zadziałają na GitHubie po przesłaniu repozytorium razem z tymi plikami. Zachowujemy tylko bieżące paczki.
+Dependencies retain their own licenses, including libimagequant’s GPL-3.0-or-later license. The app bundle includes third-party notices, accessible from **Settings → About**.
