@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SVG preservation test: only root viewport attributes may change. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300">
+  <metadata>Image Optimizer — synthetic logo fixture</metadata>
+  <g transform="translate(100 80)">
+    <path id="purple" d="M0 0H280V140H0Z" fill="#7654DE"/>
+    <path id="green" d="M300 0H400V140H300Z" fill="#37BC93"/>
+  </g>
+</svg>

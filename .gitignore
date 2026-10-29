@@ -1,0 +1,9 @@
+/target/
+/.tools/
+/dist/*
+!/dist/WebDrop-macOS-arm64.zip
+!/dist/WebDrop-Windows-x64.zip
+!/dist/WebDrop-Linux-x64.tar.gz
+!/dist/SHA256SUMS.txt
+/.DS_Store
+/artifacts/
