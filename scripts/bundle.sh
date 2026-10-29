@@ -9,8 +9,12 @@ cp target/release/image-optimizer "$app/Contents/MacOS/"
 cp macos/Info.plist "$app/Contents/Info.plist"
 cp -R macos/en.lproj macos/pl.lproj "$app/Contents/Resources/"
 python3 scripts/bundle-codecs.py "$app"
+sh scripts/build-ghostscript.sh
+python3 scripts/bundle-ghostscript.py "$app"
+python3 scripts/bundle-mupdf.py "$app"
 python3 scripts/licenses.py
 cp LICENSE README.md README.pl.md artifacts/THIRD-PARTY-NOTICES.txt "$app/Contents/Resources/"
+rm -f "$app/Contents/Resources/README.en.md"
 mkdir -p "$app/Contents/Resources/docs"
 cp -R docs/screenshots "$app/Contents/Resources/docs/"
 mkdir -p .tools

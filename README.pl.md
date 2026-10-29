@@ -6,7 +6,7 @@
 
 Przeciągnij pliki lub foldery, wybierz ustawienia i zatwierdź konwersję — pojedynczo lub całą paczką.
 
-## ⬇️ Pobierz WebDrop 0.9.2
+## ⬇️ Pobierz WebDrop 0.9.4
 
 **Wybierz swój system — bez instalowania Rusta, terminala i kompilowania.**
 
@@ -18,15 +18,15 @@ Przeciągnij pliki lub foldery, wybierz ustawienia i zatwierdź konwersję — p
 
 Wersje Windows i Linux są **eksperymentalne**: skompilowane na macOS, jeszcze bez testów uruchomienia na docelowych systemach. Linux wymaga **glibc 2.41+** (np. Debian 13), OpenGL, X11 lub Wayland, libxkbcommon i działającego portalu pulpitu do wyboru plików. Paczki są przenośnymi archiwami, nie instalatorami. Wersja macOS ma podpis lokalny, bez notaryzacji. Windows nie ma podpisu wydawcy, więc system może wyświetlić komunikat bezpieczeństwa.
 
-**Wszystkie systemy:** PNG, JPG, WebP, AVIF, JPEG XL i trim SVG. **Tylko macOS:** import AI/PDF, TIFF i HEIC/HEIF. Nie dołączono binarek dla Maców Intel, Windows ARM ani Linux ARM.
+**Wszystkie systemy:** PNG, JPG, WebP, AVIF, JPEG XL i trim SVG. **EPS:** wbudowany na macOS; na Windows/Linux wymaga aktualnego [Ghostscript](https://www.ghostscript.com/releases/gsdnld.html). **AI/PDF → SVG na Windows/Linux:** wymaga MuPDF. **Tylko macOS:** rasteryzacja AI/PDF oraz import TIFF i HEIC/HEIF. Nie dołączono binarek dla Maców Intel, Windows ARM ani Linux ARM.
 
 [Sumy kontrolne SHA-256](dist/SHA256SUMS.txt) · [Licencja](LICENSE)
 
 ## Zobacz WebDrop w akcji
 
-![WebDrop na macOS w ciemnym motywie: wyniki seryjnej konwersji PNG i JPG do WebP oraz zachowany SVG](docs/screenshots/batch-dark-pl.jpg)
+![WebDrop 0.9.4 na macOS w ciemnym motywie: tryb hybrydowy eksportuje AI, EPS i PDF do SVG, a PNG/JPG do WebP](docs/screenshots/batch-dark-pl.jpg)
 
-**Cała paczka w jednym oknie.** Format, szerokość i kompresja po prawej; wyniki oraz przyciski ponowienia po lewej. Zrzut pokazuje rzeczywiste wyniki dla plików demonstracyjnych — oszczędność zależy od obrazu i ustawień.
+**Cała paczka w jednym oknie.** Tryb hybrydowy eksportuje AI, EPS i PDF do SVG, zachowuje istniejące SVG, a PNG/JPG konwertuje do WebP. Ustawienia po prawej, wyniki i ponawianie po lewej. Zrzuty pokazują WebDrop 0.9.4 z plikami demonstracyjnymi — oszczędność zależy od obrazu i ustawień.
 
 [🍎 Pobierz na Maca](dist/WebDrop-macOS-arm64.zip?raw=true) · [🪟 Windows — wersja testowa](dist/WebDrop-Windows-x64.zip?raw=true) · [🐧 Linux — wersja testowa](dist/WebDrop-Linux-x64.tar.gz?raw=true)
 
@@ -48,7 +48,7 @@ Pole **Zapisz w** nad przyciskiem startu oferuje:
 
 Tryb i ostatnia własna ścieżka są zapamiętywane w preferencjach macOS (`OutputDestination`) po ponownym uruchomieniu, niezależnie od języka. Powrót do Custom path przywraca ostatnio wybrany własny folder. Cel jest ustalany osobno dla każdego pliku przy kliknięciu **Rozpocznij konwersję**; zmiana w trakcie pracy dotyczy kolejnego startu, także po **Ponów**. Nie ma automatycznego przełączania do Downloads, gdy wybrany folder jest niedostępny — aplikacja pokaże błąd. Oryginały i wcześniejsze wyniki nigdy nie są nadpisywane; kolizje nazw otrzymują numer, np. `logo (1).webp`. Opcja CLI `--output` pozostaje niezależna od preferencji GUI.
 
-Na Windows i Linux język oraz miejsce zapisu są przechowywane w pliku `preferences.json` w katalogu konfiguracji użytkownika. Import dokumentów AI/PDF, TIFF i HEIC jest dostępny wyłącznie na macOS.
+Na Windows i Linux język oraz miejsce zapisu są przechowywane w pliku `preferences.json` w katalogu konfiguracji użytkownika. Rasteryzacja AI/PDF oraz import TIFF i HEIC są dostępne wyłącznie na macOS. Hybrydowe AI/PDF → SVG na Windows/Linux wymaga MuPDF.
 
 ## Język i informacje o aplikacji
 
@@ -68,7 +68,7 @@ Pobierz paczkę dla swojego systemu z tabeli na górze, rozpakuj ją i otwórz a
 
 Format wybierasz z listy z opisami, a szerokość segmentami pod presetami. **Na web** przywraca WebP stratny, jakość 82, szerokość do 1500 px i wyłączony trim. **Logo** wybiera WebP bezstratny, szerokość do 1500 px i trim tła oraz przezroczystości. Aktywny preset jest wyróżniony; po zmianie jego głównych ustawień wyróżnienie znika. Wiersz **Kompresja** pokazuje tryb WebP/AVIF/JXL i edytowalną jakość, wybór silnika PNG lub jakość JPG. „Pełna” oznacza brak zmiany wymiarów. Duża strefa przeciągania zmniejsza się po dodaniu plików, zostawiając miejsce na kolejkę, pasek postępu i wyniki. **⌘,** otwiera ustawienia kompresji, importu, języka i wyglądu; **⌘O** dodaje pliki. Okno można przeciągać za środek paska tytułowego. Motyw i ustawienia eksportu wracają do wartości domyślnych po ponownym uruchomieniu.
 
-Od wersji 0.4.2 aplikacja obsługuje systemowe „Otwórz w aplikacji” dla PNG, JPG, WebP, AVIF, JXL, TIFF, HEIC/HEIF, AI, PDF i SVG, także dla wielu plików naraz i podczas działania aplikacji. Pliki trafiają do kolejki i czekają na przycisk **Rozpocznij konwersję**, także przy otwarciu z Findera i podczas trwania innej konwersji. Ustawienia są pobierane w momencie kliknięcia startu (przy nowym uruchomieniu: WebP/1500 px). Rejestruje się jako dodatkowa aplikacja, bez zmiany domyślnego programu do otwierania obrazów.
+Od wersji 0.4.2 aplikacja obsługuje systemowe „Otwórz w aplikacji” dla PNG, JPG, WebP, AVIF, JXL, TIFF, HEIC/HEIF, AI, PDF, EPS i SVG, także dla wielu plików naraz i podczas działania aplikacji. Pliki trafiają do kolejki i czekają na przycisk **Rozpocznij konwersję**, także przy otwarciu z Findera i podczas trwania innej konwersji. Ustawienia są pobierane w momencie kliknięcia startu (przy nowym uruchomieniu: WebP/1500 px). Rejestruje się jako dodatkowa aplikacja, bez zmiany domyślnego programu do otwierania obrazów.
 
 Od wersji 0.5.1 opcja **Marginesy** oznacza przycinanie (trim). Pod formatem, marginesami i kompresją widać opis aktualnego wyboru. Listy rozwijane objaśniają poszczególne tryby. **Nie przycinaj** zachowuje wszystkie brzegi; **Przytnij przezroczyste brzegi** zostawia białe tło; **Przytnij jednolite tło i przezroczystość** rozpoznaje kolor tła po narożnikach i przycina zewnętrzne marginesy, bez usuwania tła ze środka logo. Ustawienia **Import** opisują DPI, numer strony i tolerancję oraz wpływ tolerancji na delikatne cienie. Reguły dla SVG pozostają osobne: wyłącznie zmiana obszaru dokumentu.
 
@@ -91,6 +91,38 @@ Dodaj plik `.ai`, wybierz **Logo**, a następnie kliknij **Rozpocznij konwersję
 
 `zdjęcie.png` → `~/Downloads/zdjęcie.webp`. Oryginały nie są nadpisywane. Gdy wynik już istnieje, powstaje `zdjęcie (1).webp`, następnie `(2)` itd. Dotyczy to także plików z różnych katalogów o tej samej nazwie. Zapis jest atomowy i odporny na kolizje między instancjami aplikacji.
 
+### Logotypy EPS
+
+Przeciągnij `.eps` lub `.epsf` (także binarny EPS z podglądem TIFF/WMF), wybierz preset **Logo** i kliknij **Rozpocznij konwersję**. EPS jest renderowany z DPI wybranym w **Ustawienia → Import** (domyślnie 300), następnie przycinany i skalowany. Niezamalowany obszar pozostaje przezroczysty; białe tło narysowane w EPS pozostaje białe. Trim usuwa zewnętrzne marginesy, nie tło wewnątrz logo. EPS ma jedną stronę — ustaw numer strony **1**.
+
+Dostępny jest eksport do WebP, AVIF, JPEG XL, PNG i JPG; **Oryginalny** zapisuje EPS jako WebP. Wyniki rastrowe nie zawierają metadanych. Tryb **Hybrydowy · SVG / WebP** eksportuje EPS do wektorowego SVG. Aplikacja nie zapisuje ponownie EPS. Aby zachować wygląd tekstu, osadź fonty w źródłowym EPS lub zamień tekst na krzywe.
+
+Paczka macOS zawiera **Ghostscript 10.08.0** ze standardowymi fontami i zasobami — bez dodatkowej instalacji. Silnik działa w osobnym procesie z `SAFER`, limitem 60 sekund, możliwością anulowania i limitem 64 megapikseli. Na Windows/Linux zainstaluj aktualny [Ghostscript](https://www.ghostscript.com/releases/gsdnld.html): Linux wymaga `gs` w PATH, a Windows `gswin64c.exe` w PATH lub standardowym katalogu `Program Files/gs`. EPS działa też w CLI i przy rekurencyjnym dodawaniu folderów.
+
+Ghostscript jest osobnym składnikiem na licencji **AGPL-3.0-or-later**. W paczce Maca pliki `Ghostscript-LICENSES.txt` i `Ghostscript-SOURCE.txt` zawierają licencje, dokładny adres źródeł, sumę kontrolną i instrukcję budowania. Sama aplikacja pozostaje na GPL-3.0-or-later. Skrypt `sh scripts/build-ghostscript.sh` buduje samodzielny silnik EPS; `bundle.sh` wywołuje go automatycznie. Pierwszy build pobiera zweryfikowane źródła i wymaga Xcode Command Line Tools. Testy EPS wymagają zainstalowanego Ghostscript lub zbudowanego `gs` w PATH.
+
+### Tryb hybrydowy: wektory do SVG, obrazy do WebP
+
+Wybierz **Format → Hybrydowy · SVG / WebP** i dodaj mieszaną paczkę:
+
+| Wejście | Wynik |
+| --- | --- |
+| AI zgodny z PDF, PDF, EPS / EPSF | SVG z zachowanymi ścieżkami wektorowymi; tekst zamieniony na krzywe |
+| SVG | SVG identyczny bajt w bajt, chyba że włączono trim |
+| PNG, JPG, WebP, AVIF, JPEG XL, TIFF, HEIC / HEIF | WebP z wybranym rozmiarem, kompresją, jakością i trim |
+
+Domyślnie nadal wybrany jest WebP / 1500 px. Aby przycinać logo i zachować wektory, wybierz najpierw preset Logo, następnie tryb Hybrydowy. Szerokość, jakość i DPI **nie dotyczą SVG**; numer strony PDF nadal działa. Trim SVG zmienia tylko obszar dokumentu, nie usuwa białych kształtów ani nie optymalizuje ścieżek. Dla złożonych plików z maskami, filtrami lub osadzonymi obrazami wyłącz trim — aplikacja nie przytnie ich, jeśli nie potrafi zrobić tego bezpiecznie.
+
+Paczka macOS zawiera **MuPDF 1.28.5** i **Ghostscript 10.08.0**. AI/PDF konwertuje MuPDF; EPS przechodzi najpierw przez wektorowy eksport PDF w Ghostscript. Istniejące SVG omija oba silniki. Bitmapa osadzona w PDF pozostaje bitmapą wewnątrz SVG — nie jest automatycznie trasowana. Fonty najlepiej osadzić lub zamienić na krzywe w źródle. Nowy SVG zawiera grafikę strony bez metadanych autora/EXIF/XMP dokumentu źródłowego. Oryginały pozostają bez zmian.
+
+Windows/Linux wymagają `mutool` (MuPDF) w PATH do konwersji AI/PDF/EPS → SVG oraz Ghostscript dla EPS. TIFF/HEIC pozostają dostępne tylko na macOS. Każdy proces ma limit 60 sekund, anulowanie i limit wyniku 128 MB; parser SVG dopuszcza maksymalnie 100 tys. węzłów. Błąd dokumentu lub hasło nie powoduje zapisania częściowego wyniku.
+
+MuPDF jest osobnym składnikiem na licencji **AGPL-3.0-or-later**. W paczce Maca `MuPDF-LICENSES.txt` i `MuPDF-SOURCE.txt` zawierają licencje, adresy źródeł/binarki, sumy kontrolne i instrukcje budowania. `scripts/bundle-mupdf.py` pobiera zweryfikowany silnik dla macOS 15 Apple Silicon i informacje licencyjne. Testy hybrydowe wymagają `mutool` oraz Ghostscript z urządzeniem `pdfwrite` w PATH.
+
+```sh
+./scripts/cargo.sh run --release -- --batch --format hybrid --trim background logo.ai logo.eps photo.jpg
+```
+
 ### SVG — wyłącznie trim, bez optymalizacji
 
 Przeciągnij SVG tak jak pozostałe pliki. **SVG zawsze zapisuje się jako SVG**, również przy wybranym WebP, presecie „Logo” i szerokości 1500 px. Format, szerokość, jakość i algorytmy kompresji nie wpływają na SVG. Można mieszać SVG ze zdjęciami w jednej kolejce.
@@ -104,7 +136,7 @@ Wynik: `~/Downloads/logo.svg`; istniejące pliki i źródła są chronione tak s
 
 ## Ustawienia
 
-- Format: **WebP**, **AVIF**, **JPEG XL**, **Oryginalny**, **PNG**, **JPG**. Oryginalny zachowuje PNG/JPG/WebP/AVIF/JXL; AI/PDF/TIFF/HEIC eksportuje jako WebP, z informacją przy wyniku. SVG zawsze pozostaje SVG niezależnie od tej opcji.
+- Format: **Hybrydowy · SVG / WebP**, **WebP**, **AVIF**, **JPEG XL**, **Oryginalny**, **PNG**, **JPG**. Oryginalny zachowuje PNG/JPG/WebP/AVIF/JXL; AI/PDF/EPS/TIFF/HEIC eksportuje jako WebP, z informacją przy wyniku. SVG zawsze pozostaje SVG niezależnie od tej opcji.
 - Szerokość: **1500, 1000, 700, 500 px** lub oryginalna. Wysokość proporcjonalna; bez powiększania małych obrazów.
 - WebP: stratny, bezstratny lub prawie bezstratny. Jakość w trybie prawie bezstratnym określa zachowanie szczegółów; tryb bezstratny ignoruje suwak jakości.
 - PNG: bezstratny OxiPNG, stratna paleta libimagequant + OxiPNG lub bezstratny OxiPNG + Zopfli.
@@ -129,7 +161,7 @@ Aktualne wersje zależności są zapisane w `Cargo.lock`; wybór sprawdzony 28.1
 
 Żaden algorytm nie daje najmniejszego pliku dla każdego obrazu. Konwersja i kompresja stratna mogą czasem utworzyć większy plik; interfejs pokazuje rzeczywisty wynik, także wzrost rozmiaru.
 
-**Od wersji 0.4.1 każdy wynik PNG/JPG/WebP/AVIF/JXL jest zapisywany bez metadanych**: EXIF/GPS, XMP/IPTC, komentarzy, autora, dat, miniaturek, rozdzielczości/DPI i osadzonych profili ICC. Dotyczy to wszystkich ustawień, także „Oryginalny”, braku skalowania, bezstratnego PNG oraz wejść AI/PDF/TIFF/HEIC. Nie ma przełącznika pozwalającego zachować metadane. Oryginalne pliki pozostają nietknięte. Reguła dotyczy zawartości obrazu, nie systemowych dat utworzenia nowego pliku.
+**Od wersji 0.4.1 każdy wynik PNG/JPG/WebP/AVIF/JXL jest zapisywany bez metadanych**: EXIF/GPS, XMP/IPTC, komentarzy, autora, dat, miniaturek, rozdzielczości/DPI i osadzonych profili ICC. Dotyczy to wszystkich ustawień, także „Oryginalny”, braku skalowania, bezstratnego PNG oraz wejść AI/PDF/EPS/TIFF/HEIC. Nie ma przełącznika pozwalającego zachować metadane. Oryginalne pliki pozostają nietknięte. Reguła dotyczy zawartości obrazu, nie systemowych dat utworzenia nowego pliku.
 
 Przed usunięciem metadanych stosowana jest orientacja EXIF oraz konwersja kolorów do sRGB. PNG z ICC, gAMA/cHRM lub cICP Display P3 jest przeliczany przed usunięciem tych bloków. PNG z nieobsługiwanym cICP/HDR jest odrzucany z komunikatem zamiast utraty informacji o kolorach. Bez skalowania i trim bezstratny PNG zachowuje 16-bitową precyzję również przy konwersji ICC. OxiPNG używa `StripChunks::All`. Pozostają tylko bloki kodujące obraz, paletę i przezroczystość. Wyniki PNG/WebP są dodatkowo sprawdzane przed zapisem; JPG nie zawiera nawet opcjonalnych segmentów APP/COM, w tym JFIF. Przezroczystość pozostaje w PNG/WebP/AVIF/JXL; JPEG używa białego tła. Bezstratność kodowania nie oznacza bezstratności zmiany rozmiaru ani konwersji przestrzeni barw.
 
@@ -149,6 +181,8 @@ open "dist/WebDrop.app"
 ```
 
 Skrypt `cargo.sh` używa lokalnego toolchaina w `.tools`, jeśli istnieje, w przeciwnym razie systemowego Cargo. Bundlowanie tworzy ikonę i lokalny podpis ad-hoc. Publiczna dystrybucja wymaga osobnego podpisu Developer ID i notaryzacji.
+
+`./scripts/package-release.sh` odświeża tylko ZIP dla macOS i sumy kontrolne. Archiwa Windows/Linux pozostają bez zmian. Ich ponowne zbudowanie i spakowanie wymaga osobnego polecenia oraz flagi `--all` przy pakowaniu.
 
 Testy obejmują formaty i silniki, bezstratny round-trip RGBA dla AVIF/JXL (również ukryte RGB i częściowa alfa), jakość stratną, import AVIF/JXL, orientację, usuwanie metadanych i odrzucanie animacji/HDR, batch PNG/JPG → WebP, orientację EXIF, kolory ICC, przezroczystość, brak ciemnych obwódek, PNG 16-bit, skalowanie, uszkodzone pliki, animacje, anulowanie i równoczesne kolizje nazw.
 

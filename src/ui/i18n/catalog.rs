@@ -1,17 +1,54 @@
 // Polish source text → English. Numbered placeholders must match on both sides.
 pub const MESSAGES: &[(&str, &str)] = &[
+    ("Hybrydowy · SVG / WebP", "Hybrid · SVG / WebP"),
+    (
+        "AI, EPS, PDF, SVG → SVG. Pozostałe → WebP. Rozmiar i jakość dotyczą tylko WebP; SVG: tylko trim.",
+        "AI, EPS, PDF, SVG → SVG. Others → WebP. Size and quality apply only to WebP; SVG: trim only.",
+    ),
+    (
+        "Tryb hybrydowy: eksport do SVG. Tekst zamieniony na krzywe; szerokość, jakość i DPI nie dotyczą SVG.",
+        "Hybrid mode: SVG export. Text converted to paths; width, quality and DPI do not apply to SVG.",
+    ),
+    (
+        "Konwersja do SVG wymaga MuPDF (mutool). Użyj pełnej paczki macOS lub zainstaluj MuPDF i dodaj mutool do PATH.",
+        "SVG conversion requires MuPDF (mutool). Use the full macOS package or install MuPDF and add mutool to PATH.",
+    ),
+    (
+        "Nie można uruchomić silnika konwersji SVG",
+        "Cannot start the SVG conversion engine",
+    ),
+    (
+        "Przekroczono limit czasu konwersji SVG (60 s)",
+        "SVG conversion timed out (60 s)",
+    ),
+    (
+        "Przekroczono limit danych konwersji SVG",
+        "SVG conversion data limit exceeded",
+    ),
+    (
+        "Nie można odczytać liczby stron PDF",
+        "Cannot read the PDF page count",
+    ),
+    (
+        "Wybrana strona nie istnieje w PDF",
+        "The selected page does not exist in the PDF",
+    ),
+    (
+        "Silnik konwersji nie utworzył SVG",
+        "The conversion engine did not produce an SVG",
+    ),
     ("Interaktywne SVG", "Interactive SVG"),
     (
-        "Wybierz PNG, JPG, WebP, AVIF, JXL lub SVG",
-        "Choose PNG, JPG, WebP, AVIF, JXL or SVG",
+        "Wybierz PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS lub SVG",
+        "Choose PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS or SVG",
     ),
     (
-        "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, SVG (tylko trim)",
-        "Supported formats: PNG, JPG, WebP, AVIF, JXL, SVG (trim only)",
+        "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, SVG (tylko trim)",
+        "Supported formats: PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, SVG (trim only)",
     ),
     (
-        "Import AI/PDF, TIFF i HEIC jest dostępny tylko na macOS.",
-        "AI/PDF, TIFF and HEIC import is available only on macOS.",
+        "AI/PDF na Windows/Linux: tylko tryb hybrydowy, wymagany MuPDF. TIFF i HEIC: tylko macOS.",
+        "AI/PDF on Windows/Linux: Hybrid mode only, requires MuPDF. TIFF and HEIC: macOS only.",
     ),
     (
         "Nowe pliki uruchomisz po zakończeniu paczki.",
@@ -176,8 +213,8 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "The encoder could not process this image",
     ),
     (
-        "Wybierz PNG, JPG, WebP, AVIF, JXL, AI/PDF, TIFF, HEIC lub SVG",
-        "Choose PNG, JPG, WebP, AVIF, JXL, AI/PDF, TIFF, HEIC or SVG",
+        "Wybierz PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, TIFF, HEIC lub SVG",
+        "Choose PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, TIFF, HEIC or SVG",
     ),
     (
         "Wątek konwersji jest niedostępny. Uruchom aplikację ponownie.",
@@ -326,8 +363,8 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "Page of an AI/PDF or multipage TIFF",
     ),
     (
-        "DPI określa szczegółowość renderowania AI/PDF do pikseli. Więcej DPI = więcej szczegółów, pamięci i czasu. 300 to domyślna wartość; szerokość wyniku ustawiasz osobno.",
-        "DPI controls the detail when rendering AI/PDF to pixels. Higher DPI means more detail, memory and time. The default is 300; output width is set separately.",
+        "DPI określa szczegółowość renderowania AI/PDF/EPS do pikseli. Więcej DPI = więcej szczegółów, pamięci i czasu. 300 to domyślna wartość; szerokość wyniku ustawiasz osobno.",
+        "DPI controls the detail when rendering AI/PDF/EPS to pixels. Higher DPI means more detail, memory and time. The default is 300; output width is set separately.",
     ),
     (
         "Strona: wybiera jedną stronę AI/PDF lub wielostronicowego TIFF. HEIC używa obrazu głównego.",
@@ -443,8 +480,8 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "JPG: for photos. Transparent areas are filled with white.",
     ),
     (
-        "Zachowuje PNG/JPG/WebP/AVIF/JXL. AI/PDF/TIFF/HEIC → WebP. SVG zawsze → SVG.",
-        "Keeps PNG/JPG/WebP/AVIF/JXL. AI/PDF/TIFF/HEIC → WebP. SVG always → SVG.",
+        "Zachowuje PNG/JPG/WebP/AVIF/JXL. AI/PDF/EPS/TIFF/HEIC → WebP. SVG zawsze → SVG.",
+        "Keeps PNG/JPG/WebP/AVIF/JXL. AI/PDF/EPS/TIFF/HEIC → WebP. SVG always → SVG.",
     ),
     (
         "Zmniejsza plik kosztem części szczegółów. Wyższa jakość zwykle daje większy plik.",
@@ -530,8 +567,8 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "Width must be greater than zero",
     ),
     (
-        "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, AI/PDF, TIFF, HEIC/HEIF, SVG (tylko trim)",
-        "Supported formats: PNG, JPG, WebP, AVIF, JXL, AI/PDF, TIFF, HEIC/HEIF, SVG (trim only)",
+        "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, TIFF, HEIC/HEIF, SVG (tylko trim)",
+        "Supported formats: PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, TIFF, HEIC/HEIF, SVG (trim only)",
     ),
     (
         "DPI musi być w zakresie 72–600",
@@ -796,4 +833,61 @@ pub const MESSAGES: &[(&str, &str)] = &[
     ("Za mało pamięci dla WebP", "Not enough memory for WebP"),
     ("Błąd kodera WebP: {0}", "WebP encoder error: {0}"),
     ("Pusty wynik WebP", "Empty WebP output"),
+    (
+        "Nieprawidłowy nagłówek binarnego EPS",
+        "Invalid binary EPS header",
+    ),
+    (
+        "Plik nie zawiera poprawnego EPS/PostScript",
+        "The file does not contain valid EPS/PostScript",
+    ),
+    (
+        "EPS ma nieprawidłowy obszar BoundingBox",
+        "EPS has an invalid BoundingBox",
+    ),
+    (
+        "EPS nie określa obszaru BoundingBox",
+        "EPS does not define a BoundingBox",
+    ),
+    (
+        "EPS przekracza limit 64 megapikseli lub 65535 px na bok. Zmniejsz DPI.",
+        "EPS exceeds 64 megapixels or 65535 pixels per side. Reduce DPI.",
+    ),
+    (
+        "EPS wymaga Ghostscript. Zainstaluj aktualny Ghostscript lub użyj pełnej paczki WebDrop dla macOS.",
+        "EPS requires Ghostscript. Install the current Ghostscript release or use the full WebDrop package for macOS.",
+    ),
+    (
+        "Nie można uruchomić Ghostscript dla EPS",
+        "Cannot start Ghostscript for EPS",
+    ),
+    (
+        "Przekroczono limit czasu odczytu EPS (60 s)",
+        "EPS rendering timed out (60 s)",
+    ),
+    (
+        "Przekroczono limit danych renderowania EPS",
+        "EPS rendering exceeded the output data limit",
+    ),
+    ("Nie można odczytać EPS: {0}", "Cannot read EPS: {0}"),
+    (
+        "Ghostscript nie utworzył obrazu EPS",
+        "Ghostscript did not produce an EPS image",
+    ),
+    (
+        "EPS ma jedną stronę. Ustaw numer strony na 1.",
+        "EPS has one page. Set the page number to 1.",
+    ),
+    (
+        "Nieprawidłowy obraz z EPS",
+        "Invalid image rendered from EPS",
+    ),
+    (
+        "Rasteryzacja EPS: {0} DPI (Ghostscript)",
+        "EPS rendering: {0} DPI (Ghostscript)",
+    ),
+    (
+        "EPS: renderowanie na przezroczystym tle przez Ghostscript. Zawiera jedną stronę; preset Logo przycina marginesy. Na Windows/Linux zainstaluj Ghostscript.",
+        "EPS: rendered on a transparent background using Ghostscript. Contains one page; the Logo preset trims margins. On Windows/Linux, install Ghostscript.",
+    ),
 ];

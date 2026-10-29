@@ -12,6 +12,13 @@ frameworks = app / 'Contents/Frameworks'
 frameworks.mkdir(parents=True, exist_ok=True)
 root = Path(__file__).resolve().parent.parent
 prefix = Path(os.environ.get('WEBDROP_BREW_PREFIX', '/opt/homebrew' if Path('/opt/homebrew').exists() else '/usr/local'))
+deployment_target = (15, 0)
+
+
+def minimum_os(path):
+    load = subprocess.check_output(['otool', '-l', str(path)], text=True).splitlines()
+    versions = [line.strip().split()[1] for line in load if line.strip().startswith('minos ')]
+    return max((tuple(map(int, version.split('.'))) for version in versions), default=(13, 0))
 
 
 def dependencies(path):
@@ -35,6 +42,18 @@ def resolve(name, source):
         raise RuntimeError(f'Unresolved dependency: {name}')
     if not candidate.is_file():
         raise RuntimeError(f'Missing dependency: {candidate}')
+    # Homebrew may retain older compatible kegs after upgrading a dependency.
+    # Keep the documented macOS 15 baseline, using the same dylib ABI/install name.
+    if minimum_os(candidate) > deployment_target:
+        actual = candidate.resolve()
+        formula = next((p for p in actual.parents if p.parent == prefix / 'Cellar'), None)
+        compatible = [] if formula is None else [
+            p for p in formula.glob('*/lib/' + candidate.name)
+            if p.is_file() and minimum_os(p) <= deployment_target
+        ]
+        if not compatible:
+            raise RuntimeError(f'{candidate} requires newer macOS; install a macOS 15-compatible bottle before packaging')
+        candidate = sorted(compatible)[-1]
     return candidate
 
 
@@ -90,10 +109,6 @@ for name in sorted(copied):
             raise RuntimeError(f'External runtime dependency: {path}: {dep}')
     subprocess.run(['codesign', '--force', '--sign', '-', str(path)], check=True)
 # Match the bundle's declared minimum OS to the linked native libraries.
-def minimum_os(path):
-    load = subprocess.check_output(['otool', '-l', str(path)], text=True).splitlines()
-    versions = [line.strip().split()[1] for line in load if line.strip().startswith('minos ')]
-    return max((tuple(map(int, version.split('.'))) for version in versions), default=(13, 0))
 minimum = max(minimum_os(p) for p in [executable, *(frameworks / name for name in copied)])
 plist_path = app / 'Contents/Info.plist'
 with plist_path.open('rb') as file:

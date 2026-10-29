@@ -23,4 +23,10 @@ for package in sorted(metadata["packages"], key=lambda p: p["name"]):
 output = root / "artifacts/THIRD-PARTY-NOTICES.txt"
 output.parent.mkdir(parents=True, exist_ok=True)
 sections.append((root / "artifacts/NATIVE-CODEC-NOTICES.txt").read_text())
+ghostscript = root / "artifacts/GHOSTSCRIPT-NOTICES.txt"
+if ghostscript.exists():
+    sections.append(ghostscript.read_text())
+mupdf = root / "artifacts/MUPDF-NOTICES.txt"
+if mupdf.exists():
+    sections.append(mupdf.read_text())
 output.write_text("\n".join(sections))

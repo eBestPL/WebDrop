@@ -6,7 +6,7 @@
 
 Drop your files or folders, choose your settings and start converting — one image or a whole batch.
 
-## ⬇️ Download WebDrop 0.9.2
+## ⬇️ Download WebDrop 0.9.4
 
 **Download for your computer — no Rust, terminal or compilation needed.**
 
@@ -18,15 +18,15 @@ Drop your files or folders, choose your settings and start converting — one im
 
 Windows and Linux builds are **experimental**: cross-compiled on macOS and not yet run on their target operating systems. Linux requires **glibc 2.41+** (e.g. Debian 13), OpenGL, X11 or Wayland, libxkbcommon, and a working desktop portal for file dialogs. These are portable archives, not installers. The macOS build has a local signature; it is not notarized. Windows is not code-signed, so operating-system security prompts may appear.
 
-**All platforms:** PNG, JPG, WebP, AVIF, JPEG XL, and SVG trimming. **macOS only:** AI/PDF, TIFF and HEIC/HEIF import. Mac Intel, Windows ARM and Linux ARM binaries are not included.
+**All platforms:** PNG, JPG, WebP, AVIF, JPEG XL, and SVG trimming. **EPS:** included on macOS; Windows/Linux require a current [Ghostscript](https://www.ghostscript.com/releases/gsdnld.html) installation. **Hybrid AI/PDF → SVG on Windows/Linux:** requires [MuPDF](https://mupdf.com/). **macOS only:** AI/PDF rasterization, TIFF and HEIC/HEIF import. Mac Intel, Windows ARM and Linux ARM binaries are not included.
 
 [SHA-256 checksums](dist/SHA256SUMS.txt) · [License](LICENSE)
 
 ## See WebDrop in action
 
-![WebDrop on macOS in dark mode: batch PNG and JPG conversion to WebP, with SVG preserved](docs/screenshots/batch-dark-en.jpg)
+![WebDrop 0.9.4 on macOS in dark mode: Hybrid batch exports AI, EPS and PDF to SVG, and PNG/JPG to WebP](docs/screenshots/batch-dark-en.jpg)
 
-**One window for the whole batch.** Format, width and compression on the right; results and re-run controls on the left. These are actual results from sample files — savings vary with the image and settings.
+**One window for the whole batch.** Hybrid mode exports AI, EPS and PDF as SVG, keeps existing SVG, and converts PNG/JPG to WebP. Settings are on the right; results and re-run controls are on the left. Screenshots show WebDrop 0.9.4 with demonstration files — savings vary with the image and settings.
 
 [🍎 Download for Mac](dist/WebDrop-macOS-arm64.zip?raw=true) · [🪟 Windows preview](dist/WebDrop-Windows-x64.zip?raw=true) · [🐧 Linux preview](dist/WebDrop-Linux-x64.tar.gz?raw=true)
 
@@ -41,6 +41,7 @@ The default export is **WebP, up to 1500 px wide, quality 82**, saved to **Downl
 - Import PDF-compatible Illustrator files, PDF, TIFF and HEIC/HEIF using macOS frameworks.
 - Resize to a maximum width of **1500, 1000, 700 or 500 px**, or keep the original dimensions. Aspect ratio is preserved; smaller images are not enlarged.
 - Trim transparent or solid-color margins before resizing, including margins around logos.
+- **Hybrid mode:** AI/PDF/EPS → SVG; raster images → WebP in one batch.
 - Keep SVG files as SVG, with optional canvas trimming only. No SVG optimization or rasterization.
 - Remove source metadata from raster outputs, including EXIF, GPS, XMP, IPTC and embedded ICC profiles, after applying orientation and color conversion.
 - Save to Downloads, beside each source file, or in a custom folder. The destination is remembered between launches.
@@ -108,7 +109,7 @@ Writes are atomic and do not overwrite existing files, including when multiple a
 | **JPEG XL** | libjxl: lossy or lossless, lossless alpha, preservation of invisible RGB values |
 | **PNG** | Lossless OxiPNG; lossy libimagequant palette reduction followed by OxiPNG; or lossless OxiPNG + Zopfli |
 | **JPG** | MozJPEG progressive encoding; transparency is composited onto white |
-| **Original** | Keeps PNG/JPG/WebP/AVIF/JXL; exports AI/PDF/TIFF/HEIC as WebP. SVG always stays SVG |
+| **Original** | Keeps PNG/JPG/WebP/AVIF/JXL; exports AI/PDF/EPS/TIFF/HEIC as WebP. SVG always stays SVG |
 
 Quality values are not equivalent between codecs. The lossless WebP, AVIF and JXL modes ignore the quality slider. Near-lossless WebP uses it to control how much pixel detail is retained. **More thorough compression** increases encoding effort; Zopfli can take noticeably longer.
 
@@ -116,7 +117,7 @@ Resizing uses Lanczos3 in linear light with premultiplied alpha to avoid dark ed
 
 ### AI/PDF, TIFF and HEIC imports
 
-Available only in the macOS build. Import uses macOS Image I/O and Core Graphics. No separate converter is needed by the packaged app.
+Raster import is available only in the macOS build and uses Image I/O and Core Graphics. Hybrid AI/PDF → SVG also works on Windows/Linux with MuPDF installed. No separate converter is needed by the packaged app.
 
 - AI/PDF pages are rasterized onto a transparent background in sRGB, at **300 DPI** by default. Import settings offer 72, 144, 300 and 600 DPI, plus a page/artboard number.
 - Multipage TIFF supports page selection. HEIC uses the primary image and ignores auxiliary depth images.
@@ -134,6 +135,38 @@ To convert a logo, add its `.ai` or `.pdf` file, choose **Logo**, then click **S
 
 Trimming happens **before resizing**. It removes outside margins, not the background inside a logo. Completely empty or uniform images keep their dimensions. The tolerance setting in **Settings → Import** ranges from 0 to 64, with a default of 8, and controls how small color differences and nearly transparent pixels are treated.
 
+### EPS logos
+
+Drop `.eps` or `.epsf` files (including binary EPS with TIFF/WMF previews), select **Logo** and click **Start conversion**. EPS is rendered at the DPI selected in **Settings → Import** (300 by default), then trimmed and resized. Unpainted areas remain transparent; a white background drawn in the EPS stays white. Trim removes outer margins, not the background inside a logo. EPS contains one page, so set the page number to **1**.
+
+WebP, AVIF, JPEG XL, PNG and JPG exports work as usual; **Original** exports EPS as WebP. Raster output metadata is removed. Choose **Hybrid · SVG / WebP** to export EPS as vector SVG instead. EPS is never rewritten as EPS. For best font fidelity, embed fonts in the source EPS or convert text to outlines.
+
+The macOS download includes **Ghostscript 10.08.0**, its standard fonts and resources; no extra installation is needed. The interpreter runs as a separate process with `SAFER`, a 60-second timeout, cancellation and the existing 64-megapixel limit. Windows/Linux builds use a separately installed, current [Ghostscript](https://www.ghostscript.com/releases/gsdnld.html): `gs` in PATH on Linux; `gswin64c.exe` in PATH or the standard `Program Files/gs` location on Windows. EPS files work in the CLI and recursive folder imports too.
+
+Ghostscript is a separate **AGPL-3.0-or-later** component. The Mac app includes `Ghostscript-LICENSES.txt` and `Ghostscript-SOURCE.txt` with the exact source URL, checksum and build recipe. The app itself remains GPL-3.0-or-later. To build the standalone EPS interpreter, run `sh scripts/build-ghostscript.sh`; `bundle.sh` does this automatically. The first build downloads verified source and needs Xcode Command Line Tools. EPS tests require Ghostscript installed or the source-built `gs` available in PATH.
+
+### Hybrid: SVG for vectors, WebP for images
+
+Select **Format → Hybrid · SVG / WebP** to process a mixed batch:
+
+| Input | Output |
+| --- | --- |
+| PDF-compatible AI, PDF, EPS / EPSF | SVG, preserving vector paths; text is converted to outlines |
+| SVG | SVG, byte-identical unless trim is enabled |
+| PNG, JPG, WebP, AVIF, JPEG XL, TIFF, HEIC / HEIF | WebP, with your width, quality, compression and trim settings |
+
+The default remains WebP / 1500 px. Hybrid is an additional mode. Select the Logo preset first, then Hybrid, to combine trimming with vector SVG output. Raster width, quality and DPI do **not** affect SVG; PDF page selection still applies. SVG trim only changes the canvas, never removes painted white shapes or optimizes paths. Complex SVGs with masks, filters or embedded images cannot be trimmed safely: disable trim for those files.
+
+The Mac download includes **MuPDF 1.28.5** and **Ghostscript 10.08.0**. PDF-compatible AI/PDF uses MuPDF; EPS is converted through Ghostscript PDF output, then MuPDF. Existing SVG never goes through either converter. Embedded bitmap artwork stays bitmap artwork inside the generated SVG; this is not automatic tracing. Fonts should be embedded or outlined in the original document. New SVG exports contain page artwork, not the source document's author/EXIF/XMP metadata. Source files remain unchanged.
+
+Windows/Linux require `mutool` (MuPDF) in PATH for AI/PDF/EPS → SVG, plus Ghostscript for EPS. TIFF/HEIC import remains macOS-only. Each helper process has a 60-second timeout, cancellation and a 128 MB output cap; SVG parsing is limited to 100,000 XML nodes. Unsupported or password-protected documents produce an error without saving a partial result.
+
+MuPDF is a separate **AGPL-3.0-or-later** component. `MuPDF-LICENSES.txt` and `MuPDF-SOURCE.txt` in the Mac app contain component licenses, exact source/binary URLs, checksums and build instructions. `scripts/bundle-mupdf.py` downloads and verifies the pinned macOS 15 Apple Silicon tool and source notices. Hybrid integration tests require `mutool` and a Ghostscript build with `pdfwrite` in PATH.
+
+```sh
+./scripts/cargo.sh run --release -- --batch --format hybrid --trim background logo.ai logo.eps photo.jpg
+```
+
 ### SVG: trimming only
 
 **SVG always remains SVG**, even with WebP selected or the Logo preset enabled. Raster format, width, quality and compression settings do not apply to SVG.
@@ -148,9 +181,9 @@ SVG input must be valid UTF-8 and stay within the 128 MB / 100,000 XML-node limi
 
 ## Metadata, color and limits
 
-Raster outputs are always written without copied EXIF/GPS, XMP/IPTC, comments, author information, dates, thumbnails, DPI metadata or source ICC profiles. This includes **Original** mode, lossless encoding and imports from AI/PDF/TIFF/HEIC. There is no option to retain source metadata. Source files are unchanged; filesystem creation timestamps are separate from image metadata.
+Raster outputs are always written without copied EXIF/GPS, XMP/IPTC, comments, author information, dates, thumbnails, DPI metadata or source ICC profiles. This includes **Original** mode, lossless encoding and imports from AI/PDF/EPS/TIFF/HEIC. There is no option to retain source metadata. Source files are unchanged; filesystem creation timestamps are separate from image metadata.
 
-Orientation and supported color profiles are applied before metadata is removed. AVIF retains its structural sRGB color description; JXL retains the color parameters required to decode its pixels. These are not copied source metadata. **SVG is the exception**: its contents, including metadata, are preserved, apart from the optional viewport changes described above.
+Orientation and supported color profiles are applied before metadata is removed. AVIF retains its structural sRGB color description; JXL retains the color parameters required to decode its pixels. These are not copied source metadata. **Existing SVG input is the exception**: its contents, including metadata, are preserved, apart from the optional viewport changes described above.
 
 Other limits:
 
@@ -183,7 +216,7 @@ Build requirements:
 From the repository directory:
 
 ```sh
-brew install libavif jpeg-xl
+brew install libavif jpeg-xl mupdf-tools ghostscript
 ./scripts/cargo.sh test --locked
 ./scripts/cargo.sh run --release
 ./scripts/bundle.sh
@@ -194,7 +227,9 @@ open "dist/WebDrop.app"
 
 The bundle script creates `dist/WebDrop.app`, generates its icon, copies native codec libraries into `Contents/Frameworks`, rewrites their library paths, includes license notices and applies a local ad-hoc signature. The packaged app does not require Homebrew. Developer ID signing and notarization are separate from this build workflow.
 
-The current bundle requires **macOS 15 or newer**, based on the native libraries used to build it. The script derives the minimum system version from the bundled libraries. An Apple Silicon build is for Apple Silicon; build locally on an Intel Mac for that architecture.
+Run `./scripts/package-release.sh` to refresh only the macOS ZIP and checksums. Windows/Linux archives stay unchanged; rebuilding and packaging them is an explicit step with `--all` below.
+
+The current bundle requires **macOS 15 or newer**, based on the native libraries used to build it. The script derives the minimum system version from the bundled libraries. The distributed build and pinned MuPDF helper are for Apple Silicon; Intel packaging would also require a matching MuPDF executable.
 
 ### Windows and Linux cross builds
 
@@ -206,7 +241,7 @@ The cross-build scripts run on **Apple Silicon macOS** with Rust, `rustup`, Pyth
 ./scripts/build-cross.sh windows
 ./scripts/cargo.sh fetch --locked
 ./scripts/bundle.sh
-./scripts/package-release.sh
+./scripts/package-release.sh --all
 ```
 
 Run the macOS bundle step before packaging: it generates the shared third-party notices. The package script includes the native library dependency closure and licenses, and fails if a required non-system library is missing. Linux uses an `$ORIGIN/lib` RPATH so nested codec dependencies resolve inside the archive. Windows and Linux use a JSON preferences file and their own system file-opening commands. They do not include the macOS-only document decoder.
@@ -221,7 +256,7 @@ These scripts produce actual executable archives, but successful cross-compilati
 ./scripts/cargo.sh test --locked
 ```
 
-Tests cover encoders, AVIF/JXL lossless RGBA round-trips, lossy quality, metadata removal, orientation and color conversion, transparency, 16-bit PNG, resizing, trimming, corrupt input, cancellation, concurrent filename collisions and native AI/PDF/TIFF/HEIC imports. SVG tests check byte preservation, viewport-only changes, unsupported cases and rendered output using the test-only `resvg` dependency.
+Tests cover encoders, AVIF/JXL lossless RGBA round-trips, lossy quality, metadata removal, orientation and color conversion, transparency, 16-bit PNG, resizing, trimming, corrupt input, cancellation, concurrent filename collisions and native AI/PDF/EPS/TIFF/HEIC imports. SVG tests check byte preservation, viewport-only changes, unsupported cases and rendered output using the test-only `resvg` dependency.
 
 GUI logic tests cover explicit start, re-runs, destination capture and persistence, and sidebar layout in Polish and English. Native HEIC tests need access to macOS media services, and preference tests write to a separate test domain. Run these tests outside a restrictive sandbox. Fixtures under `tests/fixtures` are synthetic and contain no user data; generators are in `scripts/make-test-fixtures.swift` and `scripts/make-modern-fixtures.c`.
 

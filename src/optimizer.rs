@@ -12,11 +12,14 @@ const MAX_INPUT_BYTES: u64 = 128 * 1024 * 1024;
 const MAX_PIXELS: u64 = 64_000_000;
 #[cfg(target_os = "macos")]
 pub const INPUT_EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "webp", "avif", "jxl", "ai", "pdf", "tif", "tiff", "heic", "heif", "svg",
+    "png", "jpg", "jpeg", "webp", "avif", "jxl", "ai", "pdf", "eps", "epsf", "tif", "tiff", "heic",
+    "heif", "svg",
 ];
 
 #[cfg(not(target_os = "macos"))]
-pub const INPUT_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp", "avif", "jxl", "svg"];
+pub const INPUT_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "webp", "avif", "jxl", "ai", "pdf", "eps", "epsf", "svg",
+];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
 pub enum TrimMode {
@@ -37,6 +40,7 @@ impl TrimMode {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
 pub enum OutputFormat {
+    Hybrid,
     Webp,
     Avif,
     Jxl,
@@ -46,8 +50,24 @@ pub enum OutputFormat {
 }
 
 impl OutputFormat {
+    pub fn output_label(self, extension: &str) -> &'static str {
+        if extension.eq_ignore_ascii_case("svg")
+            || (self == Self::Hybrid
+                && ["ai", "eps", "epsf", "pdf"]
+                    .iter()
+                    .any(|ext| extension.eq_ignore_ascii_case(ext)))
+        {
+            "SVG"
+        } else if self == Self::Hybrid {
+            "WebP"
+        } else {
+            self.label()
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
+            Self::Hybrid => "Hybrydowy · SVG / WebP",
             Self::Webp => "WebP",
             Self::Avif => "AVIF",
             Self::Jxl => "JPEG XL",
@@ -194,9 +214,9 @@ pub fn optimize(
     ensure!(
         supported(input),
         if cfg!(target_os = "macos") {
-            "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, AI/PDF, TIFF, HEIC/HEIF, SVG (tylko trim)"
+            "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, TIFF, HEIC/HEIF, SVG (tylko trim)"
         } else {
-            "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, SVG (tylko trim)"
+            "Obsługiwane formaty: PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, SVG (tylko trim)"
         }
     );
     ensure!(
@@ -241,6 +261,32 @@ pub fn optimize(
             notes: vec![svg.note],
         });
     }
+    if settings.format == OutputFormat::Hybrid
+        && matches!(extension.as_str(), "ai" | "pdf" | "eps" | "epsf")
+    {
+        let converted = crate::vector::convert(
+            &data,
+            matches!(extension.as_str(), "eps" | "epsf"),
+            settings.page,
+            cancel,
+        )?;
+        let svg = crate::svg::process(&converted, settings.trim != TrimMode::Off)?;
+        check_cancel(cancel)?;
+        let path = save_unique(input, output_dir, "svg", &svg.data, cancel)?;
+        let mut notes = vec!["Tryb hybrydowy: eksport do SVG. Tekst zamieniony na krzywe; szerokość, jakość i DPI nie dotyczą SVG.".into()];
+        if settings.trim != TrimMode::Off {
+            notes.push(svg.note);
+        }
+        return Ok(Outcome {
+            path,
+            input_bytes: data.len() as u64,
+            output_bytes: svg.data.len() as u64,
+            width: svg.width,
+            height: svg.height,
+            encoder: "MuPDF · SVG",
+            notes,
+        });
+    }
     let native = ["ai", "pdf", "tif", "tiff", "heic", "heif"].contains(&extension.as_str());
     let mut notes = Vec::new();
     let (img, icc, orientation, input_format) = if matches!(extension.as_str(), "avif" | "jxl") {
@@ -256,6 +302,21 @@ pub fn optimize(
             icc,
             image::metadata::Orientation::NoTransforms,
             Some(format),
+        )
+    } else if matches!(extension.as_str(), "eps" | "epsf") {
+        let image = crate::eps::decode(&data, settings.vector_dpi, settings.page, cancel)?;
+        notes.push(format!(
+            "Rasteryzacja EPS: {} DPI (Ghostscript)",
+            settings.vector_dpi
+        ));
+        if settings.format == OutputFormat::Original {
+            notes.push("Ten format wejściowy jest eksportowany do WebP".into());
+        }
+        (
+            image,
+            None,
+            image::metadata::Orientation::NoTransforms,
+            None,
         )
     } else if native {
         let pdf = matches!(extension.as_str(), "ai" | "pdf");
@@ -361,6 +422,7 @@ pub fn optimize(
     );
     let resized = dimensions != content_dimensions;
     let format = match settings.format {
+        OutputFormat::Hybrid => OutputFormat::Webp,
         OutputFormat::Original => input_format.unwrap_or(OutputFormat::Webp),
         format => format,
     };
@@ -604,7 +666,7 @@ fn encode_palette(img: &RgbaImage, settings: &Settings) -> Result<Vec<u8>> {
 }
 
 /// Convert tagged RGB/gray images into web sRGB before stripping metadata.
-fn to_srgb(img: &DynamicImage, icc: Option<&[u8]>) -> Result<RgbaImage> {
+pub(crate) fn to_srgb(img: &DynamicImage, icc: Option<&[u8]>) -> Result<RgbaImage> {
     let mut rgba = img.to_rgba8();
     if let Some(icc) = icc {
         let source = lcms2::Profile::new_icc(icc).context("Nieprawidłowy profil ICC")?;

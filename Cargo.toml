@@ -1,6 +1,6 @@
 [package]
 name = "image-optimizer"
-version = "0.9.2"
+version = "0.9.4"
 edition = "2024"
 rust-version = "1.95"
 description = "A small, local desktop image optimizer and batch WebP, AVIF and JPEG XL converter"
@@ -9,6 +9,7 @@ authors = ["Jędrzej Czarnecki <info@ebest.pl>"]
 default-run = "image-optimizer"
 
 [dependencies]
+base64 = "0.22"
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 directories = "6.0"

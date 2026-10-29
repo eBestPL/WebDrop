@@ -48,7 +48,7 @@ struct Args {
     trim: TrimMode,
     #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u8).range(0..=64))]
     trim_tolerance: u8,
-    /// AI/PDF rasterization resolution (transparent background).
+    /// AI/PDF/EPS rasterization resolution (transparent background).
     #[arg(long, default_value_t = 300, value_parser = clap::value_parser!(u32).range(72..=600))]
     vector_dpi: u32,
     /// Page/artboard for AI/PDF or page of a multipage TIFF; HEIC uses its primary image.

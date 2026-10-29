@@ -58,6 +58,7 @@ fn assert_render_crop(before: &str, after: &str, x: u32, y: u32) {
 fn svg_is_always_svg_and_byte_identical_without_trim_for_every_output_format() {
     let source = "\u{feff}<?xml version=\"1.0\"?>\r\n<!-- Preserve this -->\r\n<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 800'><metadata>© Logo &amp; Brand</metadata><text x='30' y='50'>Original font</text><rect width='100%' height='100%' fill='#ABCDEF'/></svg>\r\n";
     for format in [
+        OutputFormat::Hybrid,
         OutputFormat::Webp,
         OutputFormat::Original,
         OutputFormat::Png,

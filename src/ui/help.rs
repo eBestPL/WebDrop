@@ -26,6 +26,9 @@ pub fn trim_description(mode: TrimMode) -> &'static str {
 
 pub fn format_description(format: OutputFormat) -> &'static str {
     match format {
+        OutputFormat::Hybrid => t(
+            "AI, EPS, PDF, SVG → SVG. Pozostałe → WebP. Rozmiar i jakość dotyczą tylko WebP; SVG: tylko trim.",
+        ),
         OutputFormat::Webp => t("WebP: do internetu, także z przezroczystym tłem."),
         OutputFormat::Avif => t(
             "AVIF: małe zdjęcia do internetu, także z przezroczystością. Zapis może potrwać dłużej.",
@@ -38,7 +41,7 @@ pub fn format_description(format: OutputFormat) -> &'static str {
         }
         OutputFormat::Jpeg => t("JPG: do zdjęć. Przezroczyste miejsca zostaną wypełnione bielą."),
         OutputFormat::Original => {
-            t("Zachowuje PNG/JPG/WebP/AVIF/JXL. AI/PDF/TIFF/HEIC → WebP. SVG zawsze → SVG.")
+            t("Zachowuje PNG/JPG/WebP/AVIF/JXL. AI/PDF/EPS/TIFF/HEIC → WebP. SVG zawsze → SVG.")
         }
     }
 }
@@ -71,7 +74,7 @@ pub fn png_description(mode: PngMode) -> &'static str {
 
 pub fn compression_description(settings: &Settings) -> &'static str {
     match settings.format {
-        OutputFormat::Webp => webp_description(settings.webp_mode),
+        OutputFormat::Webp | OutputFormat::Hybrid => webp_description(settings.webp_mode),
         OutputFormat::Avif => modern_description(settings.avif_lossless),
         OutputFormat::Jxl => modern_description(settings.jxl_lossless),
         OutputFormat::Png => png_description(settings.png_mode),

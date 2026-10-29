@@ -192,9 +192,9 @@ impl OptimizerApp {
             let status = if !optimizer::supported(&input) {
                 Status::Failed(
                     if cfg!(target_os = "macos") {
-                        "Wybierz PNG, JPG, WebP, AVIF, JXL, AI/PDF, TIFF, HEIC lub SVG"
+                        "Wybierz PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS, TIFF, HEIC lub SVG"
                     } else {
-                        "Wybierz PNG, JPG, WebP, AVIF, JXL lub SVG"
+                        "Wybierz PNG, JPG, WebP, AVIF, JXL, AI/PDF, EPS lub SVG"
                     }
                     .into(),
                 )
@@ -573,9 +573,9 @@ impl OptimizerApp {
                         if medium {
                             ui.label(
                                 RichText::new(if cfg!(target_os = "macos") {
-                                    "PNG · JPG · WebP · AVIF · JXL · AI · TIFF · HEIC · SVG"
+                                    "PNG · JPG · WebP · AVIF · JXL · AI/EPS · TIFF · HEIC · SVG"
                                 } else {
-                                    "PNG · JPG · WebP · AVIF · JXL · SVG"
+                                    "PNG · JPG · WebP · AVIF · JXL · AI/PDF · EPS · SVG"
                                 })
                                 .size(12.0)
                                 .color(p.muted),
@@ -742,7 +742,7 @@ impl OptimizerApp {
             Self::export_row(ui, "Format", |ui| {
                 egui::ComboBox::from_id_salt("output-format")
                     .selected_text(t(self.settings.format.label())).width(ui.available_width()).truncate().show_ui(ui, |ui| {
-                        for format in [OutputFormat::Webp, OutputFormat::Avif, OutputFormat::Jxl, OutputFormat::Png, OutputFormat::Jpeg, OutputFormat::Original] {
+                        for format in [OutputFormat::Hybrid, OutputFormat::Webp, OutputFormat::Png, OutputFormat::Jpeg, OutputFormat::Original, OutputFormat::Avif, OutputFormat::Jxl] {
                             Self::explained_option(ui, &mut self.settings.format, format, t(format.label()), help::format_description(format));
                         }
                     });
@@ -767,7 +767,7 @@ impl OptimizerApp {
             Self::setting_hint(ui, help::trim_description(self.settings.trim));
             Self::export_row(ui, t("Kompresja"), |ui| {
                 match self.settings.format {
-                    OutputFormat::Webp => {
+                    OutputFormat::Webp | OutputFormat::Hybrid => {
                         ui.horizontal(|ui| {
                             let width = (ui.available_width() - 134.0).max(120.0);
                             egui::ComboBox::from_id_salt("main-webp-mode").selected_text(match self.settings.webp_mode {
@@ -968,7 +968,7 @@ impl OptimizerApp {
                             ui.label(RichText::new(t("Kontrola nad jakością")).size(18.0).variation("wght", 600.0).strong());
                             Self::setting_row(ui, t("Jakość"), |ui| {
                                 let lossless = match self.settings.format {
-                                    OutputFormat::Webp => self.settings.webp_mode == WebpMode::Lossless,
+                                    OutputFormat::Webp | OutputFormat::Hybrid => self.settings.webp_mode == WebpMode::Lossless,
                                     OutputFormat::Avif => self.settings.avif_lossless,
                                     OutputFormat::Jxl => self.settings.jxl_lossless,
                                     _ => false,
@@ -1006,7 +1006,7 @@ impl OptimizerApp {
                             ui.label(RichText::new(t("Import dokumentów i marginesy")).size(18.0).variation("wght", 600.0).strong());
                             #[cfg(target_os = "macos")]
                             {
-                            Self::setting_row(ui, "AI / PDF", |ui| {
+                            Self::setting_row(ui, "AI / PDF / EPS", |ui| {
                                 ui.horizontal(|ui| {
                                     egui::ComboBox::from_id_salt("dpi").selected_text(format!("{} DPI", self.settings.vector_dpi))
                                         .width(100.0).show_ui(ui, |ui| {
@@ -1017,11 +1017,21 @@ impl OptimizerApp {
                                         .on_hover_text(t("Strona AI/PDF lub wielostronicowego TIFF"));
                                 });
                             });
-                            ui.label(RichText::new(t("DPI określa szczegółowość renderowania AI/PDF do pikseli. Więcej DPI = więcej szczegółów, pamięci i czasu. 300 to domyślna wartość; szerokość wyniku ustawiasz osobno.")).size(12.0).color(p.muted));
+                            ui.label(RichText::new(t("DPI określa szczegółowość renderowania AI/PDF/EPS do pikseli. Więcej DPI = więcej szczegółów, pamięci i czasu. 300 to domyślna wartość; szerokość wyniku ustawiasz osobno.")).size(12.0).color(p.muted));
                             ui.label(RichText::new(t("Strona: wybiera jedną stronę AI/PDF lub wielostronicowego TIFF. HEIC używa obrazu głównego.")).size(12.0).color(p.muted));
                             }
                             #[cfg(not(target_os = "macos"))]
-                            ui.label(t("Import AI/PDF, TIFF i HEIC jest dostępny tylko na macOS."));
+                            {
+                                Self::setting_row(ui, "EPS", |ui| {
+                                    egui::ComboBox::from_id_salt("eps-dpi").selected_text(format!("{} DPI", self.settings.vector_dpi))
+                                        .show_ui(ui, |ui| {
+                                            for dpi in [72,144,300,600] { ui.selectable_value(&mut self.settings.vector_dpi,dpi,format!("{dpi} DPI")); }
+                                        });
+                                });
+                                Self::setting_row(ui, t("Strona"), |ui| { ui.add(egui::DragValue::new(&mut self.settings.page).range(1..=9999)); });
+                                ui.label(t("AI/PDF na Windows/Linux: tylko tryb hybrydowy, wymagany MuPDF. TIFF i HEIC: tylko macOS."));
+                            }
+                            ui.label(RichText::new(t("EPS: renderowanie na przezroczystym tle przez Ghostscript. Zawiera jedną stronę; preset Logo przycina marginesy. Na Windows/Linux zainstaluj Ghostscript.")).size(12.0).color(p.muted));
                             Self::setting_row(ui, t("Tolerancja"), |ui| {
                                 ui.add(egui::Slider::new(&mut self.settings.trim_tolerance,0..=64));
                             });
@@ -1045,11 +1055,12 @@ impl OptimizerApp {
                     }
                 });
                 ui.separator();
-                ui.horizontal(|ui| {
-                    if self.settings_tab < 2 { ui.label(RichText::new(t("Zmiany dotyczą plików czekających na start. Trwająca konwersja zachowuje swoje ustawienia.")).size(12.0).color(p.muted)); }
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center),|ui| {
-                        if ui.add(egui::Button::new(RichText::new(t("Gotowe")).color(Color32::WHITE)).fill(p.selected)).clicked() { self.advanced=false; }
-                    });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    // Reserve the action first; the explanation wraps within the remaining space.
+                    if ui.add_sized([84.0, 34.0], egui::Button::new(RichText::new(t("Gotowe")).color(Color32::WHITE)).fill(p.selected)).clicked() { self.advanced=false; }
+                    if self.settings_tab < 2 {
+                        ui.add(egui::Label::new(RichText::new(t("Zmiany dotyczą plików czekających na start. Trwająca konwersja zachowuje swoje ustawienia.")).size(12.0).color(p.muted)).wrap());
+                    }
                 });
             });
         if modal.should_close() {
@@ -1347,11 +1358,7 @@ impl OptimizerApp {
                                     }
                                     match &row.status {
                                         Status::Ready => {
-                                            let format = if ext == "SVG" {
-                                                "SVG"
-                                            } else {
-                                                t(self.settings.format.label())
-                                            };
+                                            let format = t(self.settings.format.output_label(&ext));
                                             ui.label(
                                                 RichText::new(f(
                                                     "Czeka na start · {0}",
@@ -1365,11 +1372,7 @@ impl OptimizerApp {
                                             ui.label(
                                                 RichText::new(f(
                                                     "W kolejce · {0}",
-                                                    &[&if ext == "SVG" {
-                                                        "SVG"
-                                                    } else {
-                                                        t(row.settings.format.label())
-                                                    }],
+                                                    &[&t(row.settings.format.output_label(&ext))],
                                                 ))
                                                 .size(12.0)
                                                 .color(p.muted),
@@ -1924,6 +1927,7 @@ mod queue_tests {
         for language in [Language::Polish, Language::English] {
             language.activate("en");
             for format in [
+                OutputFormat::Hybrid,
                 OutputFormat::Webp,
                 OutputFormat::Avif,
                 OutputFormat::Jxl,
