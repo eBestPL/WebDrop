@@ -7,3 +7,5 @@ mod svg;
 mod webp_encoder;
 
 mod vector;
+
+pub mod png_worker;

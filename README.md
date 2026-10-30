@@ -24,12 +24,13 @@ Optimize images and convert whole folders for the web. Free, local, no uploads.
 2. Choose your settings, then click **Start conversion**.
 3. Find the results in **Downloads**, or choose the source folder or a custom location.
 
-Defaults: **WebP · up to 1500 px wide · quality 82**. Originals are never overwritten. Use **Re-run** to process the same files with different settings.
+Defaults: **WebP · up to 1500 px wide · quality 82**. Originals are kept by default. Choose **Save to → Overwrite originals** to replace same-format sources; format conversions keep the source. Use **Re-run** to process the same files with different settings.
 
 ## Features
 
 - **Formats:** PNG, JPG, WebP, AI, PDF, EPS, TIFF, HEIC, SVG, AVIF and JPEG XL.*
-- **Resize:** 1500, 1000, 700 or 500 px wide, keeping proportions; no upscaling.
+- **Resize:** presets or a custom width, keeping proportions; no upscaling.
+- **Auto PNG:** compares lossless compression with a high-quality palette at the chosen size. Keeps the smaller file, then applies Zopfli. Colors may change slightly; lossless modes are also available.
 - **Logo preset:** lossless WebP with **trim** — removes transparent or solid-color outer margins, not the background inside a logo.
 - **Hybrid mode:** AI/PDF/EPS → SVG; raster images → WebP.
 - **SVG stays SVG:** no optimization or conversion; optional canvas trimming only.

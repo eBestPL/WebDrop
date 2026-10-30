@@ -54,6 +54,7 @@ fn tagged_png(path: &Path, profile: bool, depth16: bool, gamma: Option<f32>) -> 
 }
 
 fn run(input: &Path, settings: Settings) -> (Vec<u8>, DynamicImage) {
+    image_optimizer::png_worker::configure_executable(env!("CARGO_BIN_EXE_image-optimizer").into());
     let dir = tempfile::tempdir().unwrap();
     let original = fs::read(input).unwrap();
     let result = optimize(input, dir.path(), &settings, &AtomicBool::new(false)).unwrap();
@@ -164,15 +165,20 @@ fn tagged_png_is_clean_for_all_encoders_and_resize_paths() {
             OutputFormat::Jpeg,
             OutputFormat::Original,
         ] {
-            for mode in 0..3 {
+            for mode in 0..4 {
                 let (_, decoded) = run(
                     &path,
                     Settings {
                         format,
                         max_width,
-                        png_mode: [PngMode::Lossless, PngMode::Palette, PngMode::Zopfli][mode],
+                        png_mode: [
+                            PngMode::Lossless,
+                            PngMode::Palette,
+                            PngMode::Zopfli,
+                            PngMode::Auto,
+                        ][mode],
                         webp_mode: [WebpMode::Lossy, WebpMode::Lossless, WebpMode::NearLossless]
-                            [mode],
+                            [mode % 3],
                         ..Default::default()
                     },
                 );

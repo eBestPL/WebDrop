@@ -80,6 +80,7 @@ impl OutputFormat {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
 pub enum PngMode {
+    Auto,
     Lossless,
     Palette,
     Zopfli,
@@ -88,6 +89,7 @@ pub enum PngMode {
 impl PngMode {
     pub fn label(self) -> &'static str {
         match self {
+            Self::Auto => "Auto · mniejszy plik",
             Self::Lossless => "OxiPNG · bezstratnie",
             Self::Palette => "Paleta · mniejszy plik",
             Self::Zopfli => "Zopfli · dokładniej, wolniej",
@@ -115,6 +117,7 @@ impl WebpMode {
 #[derive(Clone, Debug)]
 pub struct Settings {
     pub format: OutputFormat,
+    pub overwrite_originals: bool,
     pub max_width: Option<u32>,
     pub quality: u8,
     pub png_mode: PngMode,
@@ -132,9 +135,10 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             format: OutputFormat::Webp,
+            overwrite_originals: false,
             max_width: Some(1500),
             quality: 82,
-            png_mode: PngMode::Lossless,
+            png_mode: PngMode::Auto,
             webp_mode: WebpMode::Lossy,
             avif_lossless: false,
             jxl_lossless: false,
@@ -250,7 +254,7 @@ pub fn optimize(
     if extension == "svg" {
         let svg = crate::svg::process(&data, settings.trim != TrimMode::Off)?;
         check_cancel(cancel)?;
-        let path = save_unique(input, output_dir, "svg", &svg.data, cancel)?;
+        let path = save_output(input, output_dir, "svg", &svg.data, &data, settings, cancel)?;
         return Ok(Outcome {
             path,
             input_bytes: data.len() as u64,
@@ -272,7 +276,7 @@ pub fn optimize(
         )?;
         let svg = crate::svg::process(&converted, settings.trim != TrimMode::Off)?;
         check_cancel(cancel)?;
-        let path = save_unique(input, output_dir, "svg", &svg.data, cancel)?;
+        let path = save_output(input, output_dir, "svg", &svg.data, &data, settings, cancel)?;
         let mut notes = vec!["Tryb hybrydowy: eksport do SVG. Tekst zamieniony na krzywe; szerokość, jakość i DPI nie dotyczą SVG.".into()];
         if settings.trim != TrimMode::Off {
             notes.push(svg.note);
@@ -443,11 +447,8 @@ pub fn optimize(
         && orientation == image::metadata::Orientation::NoTransforms
         && icc.is_none()
         && settings.png_mode != PngMode::Palette;
-    let (encoded, encoder) = if direct_png {
-        (
-            optimize_png(&data, settings)?,
-            png_encoder_name(settings.png_mode),
-        )
+    let (mut encoded, mut encoder) = if direct_png {
+        optimize_png(&data, settings, cancel, &mut notes)?
     } else if format == OutputFormat::Png
         && !resized
         && settings.trim == TrimMode::Off
@@ -463,10 +464,7 @@ pub fn optimize(
         let rgba = crate::metadata::srgb16(&img, icc.as_deref())?;
         let mut png = Cursor::new(Vec::new());
         DynamicImage::ImageRgba16(rgba).write_to(&mut png, ImageFormat::Png)?;
-        (
-            optimize_png(&png.into_inner(), settings)?,
-            png_encoder_name(settings.png_mode),
-        )
+        optimize_png(&png.into_inner(), settings, cancel, &mut notes)?
     } else {
         let mut rgba = match prepared {
             Some(rgba) => rgba,
@@ -489,10 +487,7 @@ pub fn optimize(
                     DynamicImage::ImageRgba8(rgba).write_to(&mut buf, ImageFormat::Png)?;
                     buf.into_inner()
                 };
-                (
-                    optimize_png(&png, settings)?,
-                    png_encoder_name(settings.png_mode),
-                )
+                optimize_png(&png, settings, cancel, &mut notes)?
             }
             OutputFormat::Avif => (
                 crate::modern_codecs::encode(&rgba, format, settings)?,
@@ -505,6 +500,9 @@ pub fn optimize(
             _ => unreachable!(),
         }
     };
+    if format == OutputFormat::Png && settings.png_mode == PngMode::Auto {
+        (encoded, encoder) = auto_png(encoded, settings, cancel, &mut notes)?;
+    }
     check_cancel(cancel)?;
     if format == OutputFormat::Png || format == OutputFormat::Webp {
         crate::metadata::verify_chunks(&encoded, format == OutputFormat::Webp)?;
@@ -518,7 +516,9 @@ pub fn optimize(
         _ => "webp",
     };
     let output_bytes = encoded.len() as u64;
-    let path = save_unique(input, output_dir, extension, &encoded, cancel)?;
+    let path = save_output(
+        input, output_dir, extension, &encoded, &data, settings, cancel,
+    )?;
     Ok(Outcome {
         path,
         input_bytes: data.len() as u64,
@@ -573,20 +573,127 @@ pub fn trim_image(img: &RgbaImage, mode: TrimMode, tolerance: u8) -> RgbaImage {
 
 fn png_encoder_name(mode: PngMode) -> &'static str {
     match mode {
+        PngMode::Auto => "OxiPNG",
         PngMode::Lossless => "OxiPNG",
         PngMode::Palette => "imagequant + OxiPNG",
         PngMode::Zopfli => "OxiPNG + Zopfli",
     }
 }
 
-fn optimize_png(data: &[u8], settings: &Settings) -> Result<Vec<u8>> {
-    let mut options = oxipng::Options::from_preset(if settings.thorough { 6 } else { 3 });
-    options.strip = oxipng::StripChunks::All;
-    options.max_decompressed_size = Some(512 * 1024 * 1024);
-    if settings.png_mode == PngMode::Zopfli {
-        options.deflater = oxipng::Deflater::Zopfli(oxipng::ZopfliOptions::default());
+fn optimize_png(
+    data: &[u8],
+    settings: &Settings,
+    cancel: &AtomicBool,
+    notes: &mut Vec<String>,
+) -> Result<(Vec<u8>, &'static str)> {
+    let options = |level| {
+        let mut options = oxipng::Options::from_preset(level);
+        options.strip = oxipng::StripChunks::All;
+        options.max_decompressed_size = Some(512 * 1024 * 1024);
+        // Preserve even hidden RGB values and 16-bit precision in lossless modes.
+        options
+    };
+    let compress = |input: &[u8], options: &oxipng::Options| {
+        check_cancel(cancel)?;
+        oxipng::optimize_from_memory(input, options).context("Błąd OxiPNG")
+    };
+
+    // A fast estimate can choose the wrong filter for flat graphics. Compare it
+    // with full libdeflate trials; higher presets are not always smaller.
+    let mut best = compress(data, &options(3))?;
+    let strong = compress(data, &options(if settings.thorough { 6 } else { 5 }))?;
+    if strong.len() < best.len() {
+        best = strong;
     }
-    oxipng::optimize_from_memory(data, &options).context("Błąd OxiPNG")
+    if settings.png_mode == PngMode::Zopfli {
+        return zopfli_png(best, settings, cancel, notes);
+    }
+    check_cancel(cancel)?;
+    Ok((best, png_encoder_name(settings.png_mode)))
+}
+
+fn zopfli_png(
+    mut best: Vec<u8>,
+    settings: &Settings,
+    cancel: &AtomicBool,
+    notes: &mut Vec<String>,
+) -> Result<(Vec<u8>, &'static str)> {
+    let mut encoder = "OxiPNG + Zopfli";
+    match crate::png_worker::optimize(&best, settings.thorough, cancel) {
+        Ok(crate::png_worker::Attempt::Finished(candidate)) => {
+            if candidate.len() < best.len() {
+                best = candidate;
+            }
+        }
+        Ok(crate::png_worker::Attempt::TimedOut) => {
+            encoder = "OxiPNG";
+            notes.push(
+                "Zopfli osiągnął limit czasu. Zapisano gotowy wynik OxiPNG bez utraty jakości."
+                    .into(),
+            );
+        }
+        Err(_) => {
+            check_cancel(cancel)?;
+            encoder = "OxiPNG";
+            notes.push("Zopfli nie zakończył się poprawnie. Zapisano gotowy wynik OxiPNG bez utraty jakości.".into());
+        }
+    }
+    check_cancel(cancel)?;
+    Ok((best, encoder))
+}
+
+/// Compare encodings of exactly the same resized/trimmed image. Never relax the
+/// requested width. Zopfli runs only once, after choosing the smaller candidate.
+fn auto_png(
+    mut best: Vec<u8>,
+    settings: &Settings,
+    cancel: &AtomicBool,
+    notes: &mut Vec<String>,
+) -> Result<(Vec<u8>, &'static str)> {
+    check_cancel(cancel)?;
+    let img = image::load_from_memory_with_format(&best, ImageFormat::Png)?;
+    let mut palette_selected = false;
+    // Keep a 16-bit lossless source at full precision. Resizing already produces 8-bit pixels.
+    if img.color().bits_per_pixel() / u16::from(img.color().channel_count()) <= 8 {
+        // Target the quality floor as well: targeting 100 retains many near-identical
+        // edge colors and needlessly inflates resized logos. This is imagequant's
+        // perceptual score, not a percentage of the original image's quality.
+        let palette = encode_palette_quality(&img.to_rgba8(), settings, 95, 95);
+        check_cancel(cancel)?;
+        match palette {
+            Ok(palette) => {
+                let mut palette_settings = settings.clone();
+                palette_settings.png_mode = PngMode::Palette;
+                let (candidate, _) = optimize_png(&palette, &palette_settings, cancel, notes)?;
+                if candidate.len() < best.len() {
+                    best = candidate;
+                    palette_selected = true;
+                }
+            }
+            Err(error)
+                if matches!(
+                    error.downcast_ref::<imagequant::Error>(),
+                    Some(imagequant::Error::QualityTooLow)
+                ) => {}
+            Err(error) => return Err(error),
+        }
+    }
+    drop(img);
+    let (best, encoder) = zopfli_png(best, settings, cancel, notes)?;
+    if palette_selected {
+        notes.push("Auto PNG: wybrano mniejszą paletę przy wysokiej jakości. Kolory mogą się minimalnie różnić; wybrana szerokość została zachowana.".into());
+        Ok((
+            best,
+            if encoder == "OxiPNG + Zopfli" {
+                "imagequant + OxiPNG + Zopfli"
+            } else {
+                "imagequant + OxiPNG"
+            },
+        ))
+    } else {
+        notes.push("Auto PNG: wybrano kompresję bezstratną. Paleta nie dała mniejszego pliku przy wymaganej jakości.".into());
+        Ok((best, encoder))
+    }
 }
 
 fn encode_webp(img: &RgbaImage, settings: &Settings) -> Result<Vec<u8>> {
@@ -634,9 +741,18 @@ fn encode_jpeg(img: &RgbaImage, settings: &Settings) -> Result<Vec<u8>> {
 }
 
 fn encode_palette(img: &RgbaImage, settings: &Settings) -> Result<Vec<u8>> {
+    encode_palette_quality(img, settings, 0, settings.quality)
+}
+
+fn encode_palette_quality(
+    img: &RgbaImage,
+    settings: &Settings,
+    minimum: u8,
+    target: u8,
+) -> Result<Vec<u8>> {
     let mut attributes = imagequant::new();
     attributes.set_speed(if settings.thorough { 1 } else { 4 })?;
-    attributes.set_quality(0, settings.quality)?;
+    attributes.set_quality(minimum, target)?;
     let pixels: Vec<imagequant::RGBA> = img
         .pixels()
         .map(|p| imagequant::RGBA::new(p[0], p[1], p[2], p[3]))
@@ -646,6 +762,9 @@ fn encode_palette(img: &RgbaImage, settings: &Settings) -> Result<Vec<u8>> {
     let mut result = attributes.quantize(&mut image)?;
     result.set_dithering_level(1.0)?;
     let (palette, indices) = result.remapped(&mut image)?;
+    if minimum > 0 && result.remapping_quality().unwrap_or(0) < minimum {
+        return Err(imagequant::Error::QualityTooLow.into());
+    }
     let mut bytes = Vec::new();
     {
         let mut encoder = png::Encoder::new(&mut bytes, img.width(), img.height());
@@ -789,6 +908,73 @@ fn reject_animation(data: &[u8], format: ImageFormat) -> Result<()> {
     Ok(())
 }
 
+fn save_output(
+    input: &Path,
+    output_dir: &Path,
+    extension: &str,
+    encoded: &[u8],
+    original: &[u8],
+    settings: &Settings,
+    cancel: &AtomicBool,
+) -> Result<PathBuf> {
+    let source_extension = input
+        .extension()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_ascii_lowercase();
+    let same_format =
+        source_extension == extension || (extension == "jpg" && source_extension == "jpeg");
+    if !settings.overwrite_originals || !same_format {
+        return save_unique(input, output_dir, extension, encoded, cancel);
+    }
+
+    // Stage the complete result beside the original: a same-filesystem rename
+    // replaces it only after encoding and writing succeed, never by truncation.
+    let metadata = fs::symlink_metadata(input)?;
+    ensure!(
+        metadata.is_file() && !metadata.file_type().is_symlink(),
+        "Nadpisywanie dowiązań symbolicznych nie jest obsługiwane"
+    );
+    ensure!(
+        !metadata.permissions().readonly(),
+        "Oryginał jest tylko do odczytu"
+    );
+    let parent = input
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let mut temporary =
+        tempfile::NamedTempFile::new_in(parent).context("Brak dostępu do folderu wynikowego")?;
+    temporary
+        .write_all(encoded)
+        .context("Nie można zapisać obrazu")?;
+    temporary
+        .as_file()
+        .set_permissions(metadata.permissions())?;
+    temporary.as_file().sync_all()?;
+    check_cancel(cancel)?;
+    // Do not silently discard edits made while a slow encoder was running.
+    let current_metadata = fs::symlink_metadata(input)?;
+    ensure!(
+        current_metadata.is_file() && !current_metadata.file_type().is_symlink(),
+        "Oryginał zmienił się podczas konwersji. Dodaj plik ponownie."
+    );
+    let mut current = Vec::new();
+    File::open(input)?
+        .take(original.len() as u64 + 1)
+        .read_to_end(&mut current)?;
+    ensure!(
+        current == original,
+        "Oryginał zmienił się podczas konwersji. Dodaj plik ponownie."
+    );
+    check_cancel(cancel)?;
+    temporary
+        .persist(input)
+        .map_err(|error| error.error)
+        .context("Nie można nadpisać oryginału")?;
+    Ok(input.to_path_buf())
+}
+
 fn save_unique(
     input: &Path,
     output_dir: &Path,
@@ -831,5 +1017,48 @@ pub fn format_bytes(bytes: u64) -> String {
         format!("{:.0} KB", bytes as f64 / 1000.0)
     } else {
         format!("{bytes} B")
+    }
+}
+
+#[cfg(test)]
+mod overwrite_tests {
+    use super::*;
+
+    #[test]
+    fn stale_source_and_cancelled_commit_are_preserved_without_temporary_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let input = dir.path().join("source.png");
+        fs::write(&input, b"edited source").unwrap();
+        let settings = Settings {
+            overwrite_originals: true,
+            ..Default::default()
+        };
+        let stale = save_output(
+            &input,
+            dir.path(),
+            "png",
+            b"encoded result",
+            b"old source",
+            &settings,
+            &AtomicBool::new(false),
+        );
+        assert!(
+            stale
+                .unwrap_err()
+                .to_string()
+                .contains("Oryginał zmienił się")
+        );
+        let cancelled = save_output(
+            &input,
+            dir.path(),
+            "png",
+            b"encoded result",
+            b"edited source",
+            &settings,
+            &AtomicBool::new(true),
+        );
+        assert!(cancelled.is_err());
+        assert_eq!(fs::read(&input).unwrap(), b"edited source");
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     }
 }

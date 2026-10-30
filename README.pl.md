@@ -24,12 +24,13 @@ Optymalizuj obrazy i konwertuj całe foldery na potrzeby stron www. Bezpłatnie,
 2. Wybierz ustawienia i kliknij **Rozpocznij konwersję**.
 3. Odbierz wyniki w **Downloads** albo wybierz folder źródłowy lub własny.
 
-Domyślnie: **WebP · do 1500 px szerokości · jakość 82**. Oryginały nigdy nie są nadpisywane. Przycisk **Ponów** pozwala przetworzyć te same pliki z innymi ustawieniami.
+Domyślnie: **WebP · do 1500 px szerokości · jakość 82**. Domyślnie oryginały są zachowywane. Opcja **Zapisz w → Nadpisuj oryginały** zastępuje źródła w tym samym formacie; konwersja do innego formatu zachowuje oryginał. Przycisk **Ponów** pozwala przetworzyć te same pliki z innymi ustawieniami.
 
 ## Możliwości
 
 - **Formaty:** PNG, JPG, WebP, AI, PDF, EPS, TIFF, HEIC, SVG, AVIF i JPEG XL.*
-- **Rozmiar:** szerokość 1500, 1000, 700 lub 500 px, z zachowaniem proporcji; bez powiększania.
+- **Rozmiar:** gotowe ustawienia lub własna szerokość, z zachowaniem proporcji; bez powiększania.
+- **Auto PNG:** porównuje zapis bezstratny i paletę wysokiej jakości przy wybranych wymiarach. Wybiera mniejszy plik i używa Zopfli. Kolory mogą się minimalnie różnić; dostępne są też tryby bezstratne.
 - **Preset Logo:** bezstratny WebP i **trim** — przycinanie przezroczystych lub jednolitych marginesów, bez usuwania tła wewnątrz logo.
 - **Tryb hybrydowy:** AI/PDF/EPS → SVG; obrazy rastrowe → WebP.
 - **SVG pozostaje SVG:** bez optymalizacji i konwersji; opcjonalnie tylko przycięcie obszaru dokumentu.

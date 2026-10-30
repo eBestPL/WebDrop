@@ -259,7 +259,7 @@ impl OptimizerApp {
         }
         if count > 0 {
             self.detail_row = None;
-            self.notice = Some("Pliki przygotowane ponownie. Zmień opcje i kliknij „Rozpocznij konwersję”. Poprzednie wyniki pozostają na dysku.".into());
+            self.notice = Some("Pliki przygotowane ponownie. Zmień opcje i kliknij „Rozpocznij konwersję”. Nadpisane oryginały nie są przywracane.".into());
         }
     }
 
@@ -289,6 +289,8 @@ impl OptimizerApp {
                 continue;
             }
             row.settings = self.settings.clone();
+            row.settings.overwrite_originals =
+                self.destination.mode == DestinationMode::OverwriteOriginals;
             row.status = match self.destination.resolve(&row.input, &self.downloads) {
                 Ok(output) => {
                     let job = Job {
@@ -387,8 +389,7 @@ impl OptimizerApp {
     fn cancel_queue(&mut self) {
         self.cancel.store(true, Ordering::Relaxed);
         self.cancel = Arc::new(AtomicBool::new(false));
-        self.notice =
-            Some("Anulowanie kolejki. Trwający etap kodowania musi się zakończyć.".into());
+        self.notice = Some("Anulowanie kolejki…".into());
     }
 
     fn pending(&self) -> usize {
@@ -749,8 +750,29 @@ impl OptimizerApp {
             });
             Self::setting_hint(ui, help::format_description(self.settings.format));
             Self::export_row(ui, t("Szerokość"), |ui| {
-                segments(ui, &mut self.settings.max_width, &[(Some(1500), "1500"), (Some(1000), "1000"),
-                    (Some(700), "700"), (Some(500), "500"), (None, t("Pełna"))]);
+                ui.horizontal(|ui| {
+                    let selected = match self.settings.max_width {
+                        None => t("Pełna").to_owned(),
+                        Some(width @ (1500 | 1000 | 700 | 500)) => format!("{width} px"),
+                        Some(_) => t("Własna szerokość").to_owned(),
+                    };
+                    egui::ComboBox::from_id_salt("resize-width")
+                        .selected_text(selected).width((ui.available_width() - 100.0).max(90.0)).truncate()
+                        .show_ui(ui, |ui| {
+                            for width in [1500, 1000, 700, 500] {
+                                ui.selectable_value(&mut self.settings.max_width, Some(width), format!("{width} px"));
+                            }
+                            ui.selectable_value(&mut self.settings.max_width, None, t("Pełna"));
+                            let custom = self.settings.max_width.is_some_and(|w| ![1500, 1000, 700, 500].contains(&w));
+                            if ui.selectable_label(custom, t("Własna szerokość")).clicked() && !custom {
+                                self.settings.max_width = Some(1200);
+                            }
+                        });
+                    if let Some(width) = &mut self.settings.max_width {
+                        ui.add_sized([90.0, 24.0], egui::DragValue::new(width).range(1..=65_535).speed(10.0).suffix(" px"))
+                            .on_hover_text(t("Wpisz dowolną szerokość od 1 do 65535 px. Wysokość jest proporcjonalna. Mniejsze obrazy nie są powiększane."));
+                    }
+                });
             });
             Self::export_row(ui, t("Marginesy"), |ui| {
                 egui::ComboBox::from_id_salt("trim").selected_text(help::trim_label(self.settings.trim))
@@ -810,7 +832,7 @@ impl OptimizerApp {
                         egui::ComboBox::from_id_salt("main-png-mode").selected_text(t(self.settings.png_mode.label()))
                             .width(ui.available_width()).truncate().show_ui(ui, |ui| {
 
-                                for mode in [PngMode::Lossless, PngMode::Palette, PngMode::Zopfli] {
+                                for mode in [PngMode::Auto, PngMode::Zopfli, PngMode::Lossless, PngMode::Palette] {
                                     Self::explained_option(ui, &mut self.settings.png_mode, mode, t(mode.label()), help::png_description(mode));
                                 }
                             });
@@ -987,7 +1009,7 @@ impl OptimizerApp {
                                 egui::ComboBox::from_id_salt("png-mode").selected_text(t(self.settings.png_mode.label()))
                                     .width(ui.available_width()).truncate().show_ui(ui, |ui| {
 
-                                for mode in [PngMode::Lossless, PngMode::Palette, PngMode::Zopfli] { Self::explained_option(ui, &mut self.settings.png_mode, mode, t(mode.label()), help::png_description(mode)); }
+                                for mode in [PngMode::Auto, PngMode::Zopfli, PngMode::Lossless, PngMode::Palette] { Self::explained_option(ui, &mut self.settings.png_mode, mode, t(mode.label()), help::png_description(mode)); }
                                     });
                             });
                             for (label, lossless) in [("AVIF", &mut self.settings.avif_lossless), ("JPEG XL", &mut self.settings.jxl_lossless)] {
@@ -1266,7 +1288,7 @@ impl OptimizerApp {
                 }
                 if pending == 0 && self.rows.iter().any(Self::can_prepare_again)
                     && ui.button(t("Ponów wszystkie"))
-                        .on_hover_text(t("Przygotuj oryginały ponownie, zmień opcje i potwierdź przyciskiem startu. Poprzednie wyniki pozostaną na dysku."))
+                        .on_hover_text(t("Przygotuj te same pliki ponownie, zmień opcje i potwierdź start. Nadpisane oryginały nie są przywracane."))
                         .clicked()
                 {
                     self.prepare_again(None);
@@ -1464,7 +1486,7 @@ impl OptimizerApp {
                                             response.widget_info(|| egui::WidgetInfo::labeled(
                                                 egui::Role::Button, pending == 0,
                                                 f("Ponów: {0}", &[&row.input.file_name().unwrap_or_default().to_string_lossy()])));
-                                            if response.on_hover_text(t("Przygotuj oryginały ponownie, zmień opcje i potwierdź przyciskiem startu. Poprzednie wyniki pozostaną na dysku.")).clicked() {
+                                            if response.on_hover_text(t("Przygotuj te same pliki ponownie, zmień opcje i potwierdź start. Nadpisane oryginały nie są przywracane.")).clicked() {
                                                 retry = Some(row.id);
                                             }
                                         }
@@ -1620,7 +1642,7 @@ impl OptimizerApp {
                             if ui.add_enabled(self.pending() == 0, egui::Button::new(t("Zmień opcje i ponów"))).clicked() {
                                 retry = Some(row.id);
                             }
-                            ui.label(RichText::new(t("Przygotuj oryginały ponownie, zmień opcje i potwierdź przyciskiem startu. Poprzednie wyniki pozostaną na dysku.")).size(12.0).color(p.muted));
+                            ui.label(RichText::new(t("Przygotuj te same pliki ponownie, zmień opcje i potwierdź start. Nadpisane oryginały nie są przywracane.")).size(12.0).color(p.muted));
                         }
                     });
             });
@@ -1642,6 +1664,7 @@ impl OptimizerApp {
             DestinationMode::Downloads => "Downloads",
             DestinationMode::SameFolder => t("Folder źródłowy"),
             DestinationMode::Custom => t("Własny folder"),
+            DestinationMode::OverwriteOriginals => t("Nadpisuj oryginały"),
         };
         ui.horizontal(|ui| {
             ui.label(
@@ -1660,6 +1683,7 @@ impl OptimizerApp {
                         DestinationMode::Downloads,
                         DestinationMode::SameFolder,
                         DestinationMode::Custom,
+                        DestinationMode::OverwriteOriginals,
                     ] {
                         if ui
                             .selectable_value(&mut mode, option, label(option))
@@ -1678,7 +1702,10 @@ impl OptimizerApp {
                 self.remember_destination();
             }
         }
-        if self.destination.mode == DestinationMode::SameFolder {
+        if self.destination.mode == DestinationMode::OverwriteOriginals {
+            ui.add(egui::Label::new(RichText::new(t("Ten sam format: zastępuje oryginał. Inny format: nowy plik obok, oryginał zostaje."))
+                .size(11.0).color(p.muted)).wrap());
+        } else if self.destination.mode == DestinationMode::SameFolder {
             ui.label(
                 RichText::new(t(
                     "Każdy wynik obok swojego oryginału. Oryginały nie są nadpisywane.",
@@ -1939,6 +1966,7 @@ mod queue_tests {
                     DestinationMode::Downloads,
                     DestinationMode::SameFolder,
                     DestinationMode::Custom,
+                    DestinationMode::OverwriteOriginals,
                 ] {
                     for state in 0..3 {
                         let busy = state > 0;
@@ -1952,7 +1980,18 @@ mod queue_tests {
                         };
                         app.settings.avif_lossless = lossless;
                         app.settings.jxl_lossless = lossless;
-                        app.settings.png_mode = PngMode::Zopfli;
+                        app.settings.png_mode = if state == 0 {
+                            PngMode::Auto
+                        } else {
+                            PngMode::Zopfli
+                        };
+                        app.settings.max_width = if state == 0 {
+                            Some(1234)
+                        } else if state == 1 {
+                            Some(1500)
+                        } else {
+                            None
+                        };
                         app.destination.mode = mode;
                         app.destination.custom =
                             Some(dir.path().join("Long custom output folder name 🖼"));
@@ -1987,6 +2026,23 @@ mod queue_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn overwrite_is_opt_in_and_captured_at_start() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut app, work) = app(dir.path().join("downloads"));
+        assert!(!app.settings.overwrite_originals);
+        app.enqueue(vec![dir.path().join("logo.png")]);
+        app.destination.mode = DestinationMode::OverwriteOriginals;
+        assert!(work.try_recv().is_err());
+        app.start_conversion();
+        let job = work.try_recv().unwrap();
+        assert!(job.settings.overwrite_originals);
+        assert_eq!(job.output, dir.path());
+        app.destination.mode = DestinationMode::Downloads;
+        assert!(job.settings.overwrite_originals);
+        assert!(!app.settings.overwrite_originals);
     }
 
     #[test]

@@ -5,6 +5,7 @@ pub enum Mode {
     #[default]
     Downloads,
     SameFolder,
+    OverwriteOriginals,
     Custom,
 }
 
@@ -31,7 +32,7 @@ impl Destination {
                 .clone()
                 .filter(|p| p.is_absolute())
                 .ok_or_else(|| "Wybierz folder wynikowy.".into()),
-            Mode::SameFolder => {
+            Mode::SameFolder | Mode::OverwriteOriginals => {
                 let parent = input
                     .parent()
                     .ok_or_else(|| "Nie można znaleźć folderu źródłowego.".to_owned())?;
@@ -88,6 +89,7 @@ impl Destination {
             mode: match mode {
                 1 => Mode::SameFolder,
                 2 => Mode::Custom,
+                3 => Mode::OverwriteOriginals,
                 _ => Mode::Downloads,
             },
             custom,
@@ -105,6 +107,7 @@ impl Destination {
             Mode::Downloads => 0,
             Mode::SameFolder => 1,
             Mode::Custom => 2,
+            Mode::OverwriteOriginals => 3,
         };
         // SAFETY: domain is NUL-terminated; path points to length readable bytes for this call.
         unsafe { io_save_output_preference(domain.as_ptr(), mode, path.as_ptr(), path.len()) }
@@ -176,7 +179,12 @@ mod tests {
         let mut dest = Destination::default();
         assert_eq!(Destination::load_domain(&domain), dest);
         dest.custom = Some("/tmp/Zażółć gęślą 🖼/exports".into());
-        for mode in [Mode::Custom, Mode::SameFolder, Mode::Downloads] {
+        for mode in [
+            Mode::Custom,
+            Mode::SameFolder,
+            Mode::Downloads,
+            Mode::OverwriteOriginals,
+        ] {
             dest.mode = mode;
             assert!(dest.save_domain(&domain));
             assert_eq!(Destination::load_domain(&domain), dest);

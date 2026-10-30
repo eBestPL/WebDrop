@@ -24,6 +24,7 @@ fn png(path: &Path, width: u32, height: u32) -> RgbaImage {
 }
 
 fn run(path: &Path, output: &Path, settings: &Settings) -> image_optimizer::optimizer::Outcome {
+    image_optimizer::png_worker::configure_executable(env!("CARGO_BIN_EXE_image-optimizer").into());
     optimize(path, output, settings, &AtomicBool::new(false)).unwrap()
 }
 
@@ -121,6 +122,10 @@ fn all_png_engines_produce_decodable_outputs_and_lossless_engines_preserve_pixel
                 ..Default::default()
             },
         );
+        if mode == PngMode::Zopfli {
+            // A worker launch failure must not silently pass as an OxiPNG-only test.
+            assert_eq!(result.encoder, "OxiPNG + Zopfli");
+        }
         let decoded = image::open(result.path).unwrap().to_rgba8();
         assert_eq!(decoded.dimensions(), original.dimensions());
         if mode != PngMode::Palette {
@@ -351,4 +356,50 @@ fn cli_batch_continues_after_bad_file_and_reports_failure() {
         (40, 20)
     );
     assert!(!output.join("broken.webp").exists());
+}
+
+#[test]
+fn png_logo_uses_full_filter_trials_without_changing_colors_or_dimensions() {
+    let dir = tempfile::tempdir().unwrap();
+    let input = dir.path().join("logo.png");
+    // A flat logo with antialiased edges, 65 opaque colors and transparency.
+    // No private/user artwork is needed for this compression regression.
+    let pixels = RgbaImage::from_fn(160, 70, |x, y| {
+        let shade = ((x / 3 + y / 2) % 65) as u8;
+        if (x / 80 + y / 40) % 3 == 0 {
+            Rgba([255, 255, 255, 0])
+        } else {
+            Rgba([shade * 3, 190 - shade, 70 + shade * 2, 255])
+        }
+    });
+    pixels.save(&input).unwrap();
+    let source = fs::read(&input).unwrap();
+    // Reference the old fast-only encoder and an exhaustive filter search.
+    let reference_size = [3, 6]
+        .into_iter()
+        .map(|level| {
+            let mut options = oxipng::Options::from_preset(level);
+            options.strip = oxipng::StripChunks::All;
+            oxipng::optimize_from_memory(&source, &options)
+                .unwrap()
+                .len()
+        })
+        .min()
+        .unwrap();
+    for mode in [PngMode::Lossless, PngMode::Zopfli] {
+        let result = run(
+            &input,
+            dir.path(),
+            &Settings {
+                format: OutputFormat::Png,
+                max_width: None,
+                png_mode: mode,
+                thorough: true,
+                ..Default::default()
+            },
+        );
+        assert!(result.output_bytes <= reference_size as u64);
+        assert_eq!(image::open(result.path).unwrap().to_rgba8(), pixels);
+        assert_eq!(fs::read(&input).unwrap(), source);
+    }
 }

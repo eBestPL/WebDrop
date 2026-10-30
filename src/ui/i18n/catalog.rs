@@ -109,12 +109,12 @@ pub const MESSAGES: &[(&str, &str)] = &[
     ("Ponów wszystkie", "Re-run all"),
     ("Zmień opcje i ponów", "Change settings and re-run"),
     (
-        "Przygotuj oryginały ponownie, zmień opcje i potwierdź przyciskiem startu. Poprzednie wyniki pozostaną na dysku.",
-        "Stage the originals again, change settings, then confirm with the Start button. Previous results stay on disk.",
+        "Przygotuj te same pliki ponownie, zmień opcje i potwierdź start. Nadpisane oryginały nie są przywracane.",
+        "Stage the same files again, change settings, then confirm with Start. Overwritten originals are not restored.",
     ),
     (
-        "Pliki przygotowane ponownie. Zmień opcje i kliknij „Rozpocznij konwersję”. Poprzednie wyniki pozostają na dysku.",
-        "Files staged again. Change settings, then click “Start conversion”. Previous results stay on disk.",
+        "Pliki przygotowane ponownie. Zmień opcje i kliknij „Rozpocznij konwersję”. Nadpisane oryginały nie są przywracane.",
+        "Files staged again. Change settings, then click “Start conversion”. Overwritten originals are not restored.",
     ),
     ("Rozpocznij konwersję · {0}", "Start conversion · {0}"),
     ("Konwersja w toku…", "Conversion in progress…"),
@@ -226,10 +226,7 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "Nie można otworzyć Downloads: {0}",
         "Cannot open Downloads: {0}",
     ),
-    (
-        "Anulowanie kolejki. Trwający etap kodowania musi się zakończyć.",
-        "Cancelling the queue. The current encoding step needs to finish.",
-    ),
+    ("Anulowanie kolejki…", "Cancelling the queue…"),
     (
         "Kompresja, import, język i informacje o aplikacji · ⌘,",
         "Compression, import, language and app information · ⌘,",
@@ -472,8 +469,8 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "WebP: for the web, including transparent backgrounds.",
     ),
     (
-        "PNG: grafiki i logo z przezroczystością. Tryb kompresji wybierz poniżej.",
-        "PNG: graphics and logos with transparency. Choose a compression mode below.",
+        "PNG: Auto szuka mniejszego pliku przy wybranej szerokości. Może minimalnie zmienić kolory.",
+        "PNG: Auto looks for a smaller file at your chosen width. Colors may change slightly.",
     ),
     (
         "JPG: do zdjęć. Przezroczyste miejsca zostaną wypełnione bielą.",
@@ -496,16 +493,16 @@ pub const MESSAGES: &[(&str, &str)] = &[
         "Slightly simplifies pixels to reduce file size. Higher quality preserves more detail.",
     ),
     (
-        "OxiPNG: zmniejsza plik bez zmiany pikseli gotowego obrazu.",
-        "OxiPNG: reduces file size without changing the finished image's pixels.",
+        "OxiPNG porównuje warianty kompresji i wybiera najmniejszy. Zachowuje piksele gotowego obrazu.",
+        "OxiPNG compares compression candidates and keeps the smallest. Preserves the finished image's pixels.",
     ),
     (
         "Paleta: ogranicza liczbę kolorów. Może dać mniejszy plik, ale zmienia wygląd obrazu.",
         "Palette: reduces the number of colors. Can produce a smaller file but changes the image's appearance.",
     ),
     (
-        "Zopfli: szuka lepszej kompresji bez zmiany pikseli. Działa wolniej; wynik nie zawsze jest mniejszy.",
-        "Zopfli: seeks better compression without changing pixels. Slower; the result is not always smaller.",
+        "Zopfli: dodatkowa kompresja, limit 10 s (dokładniej: 30 s). Po limicie zachowuje wynik OxiPNG.",
+        "Zopfli: extra compression, limited to 10 s (thorough: 30 s). On timeout, keeps the OxiPNG result.",
     ),
     (
         "Niższa jakość daje zwykle mniejszy plik i mniej szczegółów. 82 to punkt wyjścia do zdjęć.",
@@ -514,6 +511,24 @@ pub const MESSAGES: &[(&str, &str)] = &[
     (
         "Każdy format używa własnych ustawień kompresji. „Oryginał” nie oznacza kopii bez zmian.",
         "Each format uses its own compression settings. “Original” does not mean an unchanged copy.",
+    ),
+    ("Auto · mniejszy plik", "Auto · smaller file"),
+    (
+        "Auto: porównuje zapis bezstratny i paletę wysokiej jakości, wybiera mniejszy, potem używa Zopfli. Paleta może zmienić kolory.",
+        "Auto: compares lossless encoding with a high-quality palette, keeps the smaller file, then runs Zopfli. Palette may change colors.",
+    ),
+    ("Własna szerokość", "Custom width"),
+    (
+        "Wpisz dowolną szerokość od 1 do 65535 px. Wysokość jest proporcjonalna. Mniejsze obrazy nie są powiększane.",
+        "Enter any width from 1 to 65535 px. Height stays proportional. Smaller images are not enlarged.",
+    ),
+    (
+        "Auto PNG: wybrano mniejszą paletę przy wysokiej jakości. Kolory mogą się minimalnie różnić; wybrana szerokość została zachowana.",
+        "Auto PNG: selected a smaller high-quality palette. Colors may differ slightly; the chosen width was respected.",
+    ),
+    (
+        "Auto PNG: wybrano kompresję bezstratną. Paleta nie dała mniejszego pliku przy wymaganej jakości.",
+        "Auto PNG: selected lossless compression. A palette did not produce a smaller file at the required quality.",
     ),
     ("OxiPNG · bezstratnie", "OxiPNG · lossless"),
     ("Paleta · mniejszy plik", "Palette · smaller file"),
@@ -633,6 +648,39 @@ pub const MESSAGES: &[(&str, &str)] = &[
     (
         "Metadane usunięte: EXIF/GPS, XMP/IPTC, komentarze i profile. Orientacja i kolory zastosowane przed zapisem.",
         "Metadata removed: EXIF/GPS, XMP/IPTC, comments and profiles. Orientation and colors were applied before saving.",
+    ),
+    (
+        "Skalowanie PNG wygładza krawędzie i może zwiększyć plik. Aby optymalizować bez skalowania, wybierz pełną szerokość.",
+        "Resizing PNG smooths edges and can increase file size. To optimize without resizing, choose full width.",
+    ),
+    ("Nadpisuj oryginały", "Overwrite originals"),
+    (
+        "Ten sam format: zastępuje oryginał. Inny format: nowy plik obok, oryginał zostaje.",
+        "Same format: replaces the original. Different format: new file beside it; original kept.",
+    ),
+    (
+        "Nadpisywanie dowiązań symbolicznych nie jest obsługiwane",
+        "Overwriting symbolic links is not supported",
+    ),
+    (
+        "Oryginał jest tylko do odczytu",
+        "The original is read-only",
+    ),
+    (
+        "Oryginał zmienił się podczas konwersji. Dodaj plik ponownie.",
+        "The original changed during conversion. Add the file again.",
+    ),
+    (
+        "Nie można nadpisać oryginału",
+        "Cannot overwrite the original",
+    ),
+    (
+        "Zopfli osiągnął limit czasu. Zapisano gotowy wynik OxiPNG bez utraty jakości.",
+        "Zopfli reached its time limit. Saved the completed OxiPNG result without quality loss.",
+    ),
+    (
+        "Zopfli nie zakończył się poprawnie. Zapisano gotowy wynik OxiPNG bez utraty jakości.",
+        "Zopfli did not finish successfully. Saved the completed OxiPNG result without quality loss.",
     ),
     ("Błąd OxiPNG", "OxiPNG error"),
     ("Błąd kodera MozJPEG", "MozJPEG encoder error"),

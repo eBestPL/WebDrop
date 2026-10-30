@@ -24,6 +24,9 @@ struct Args {
     /// Process files without opening a window.
     #[arg(long)]
     batch: bool,
+    /// Atomically replace same-format originals. Format conversions keep the source.
+    #[arg(long)]
+    overwrite_originals: bool,
     #[arg(long, value_enum, default_value_t = OutputFormat::Webp)]
     format: OutputFormat,
     /// Maximum width, without upscaling. 0 keeps original dimensions.
@@ -31,7 +34,7 @@ struct Args {
     width: u32,
     #[arg(long, default_value_t = 82, value_parser = clap::value_parser!(u8).range(1..=100))]
     quality: u8,
-    #[arg(long, value_enum, default_value_t = PngMode::Lossless)]
+    #[arg(long, value_enum, default_value_t = PngMode::Auto)]
     png_mode: PngMode,
     #[arg(long, value_enum, default_value_t = WebpMode::Lossy)]
     webp_mode: WebpMode,
@@ -65,6 +68,10 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn run() -> anyhow::Result<()> {
+    if let Some(result) = image_optimizer::png_worker::worker_entry() {
+        return result;
+    }
+    image_optimizer::png_worker::configure_executable(std::env::current_exe()?);
     let args = Args::parse();
     if args.batch {
         anyhow::ensure!(!args.files.is_empty(), "Add at least one file to --batch");
@@ -74,6 +81,7 @@ fn run() -> anyhow::Result<()> {
             .unwrap_or_else(optimizer::downloads_dir)?;
         let settings = Settings {
             format: args.format,
+            overwrite_originals: args.overwrite_originals,
             max_width: (args.width > 0).then_some(args.width),
             quality: args.quality,
             png_mode: args.png_mode,

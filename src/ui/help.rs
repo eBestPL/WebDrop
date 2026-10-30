@@ -36,9 +36,9 @@ pub fn format_description(format: OutputFormat) -> &'static str {
         OutputFormat::Jxl => {
             t("JPEG XL: zdjęcia i grafiki wysokiej jakości. Sprawdź obsługę na docelowej stronie.")
         }
-        OutputFormat::Png => {
-            t("PNG: grafiki i logo z przezroczystością. Tryb kompresji wybierz poniżej.")
-        }
+        OutputFormat::Png => t(
+            "PNG: Auto szuka mniejszego pliku przy wybranej szerokości. Może minimalnie zmienić kolory.",
+        ),
         OutputFormat::Jpeg => t("JPG: do zdjęć. Przezroczyste miejsca zostaną wypełnione bielą."),
         OutputFormat::Original => {
             t("Zachowuje PNG/JPG/WebP/AVIF/JXL. AI/PDF/EPS/TIFF/HEIC → WebP. SVG zawsze → SVG.")
@@ -62,12 +62,17 @@ pub fn webp_description(mode: WebpMode) -> &'static str {
 
 pub fn png_description(mode: PngMode) -> &'static str {
     match mode {
-        PngMode::Lossless => t("OxiPNG: zmniejsza plik bez zmiany pikseli gotowego obrazu."),
+        PngMode::Auto => t(
+            "Auto: porównuje zapis bezstratny i paletę wysokiej jakości, wybiera mniejszy, potem używa Zopfli. Paleta może zmienić kolory.",
+        ),
+        PngMode::Lossless => t(
+            "OxiPNG porównuje warianty kompresji i wybiera najmniejszy. Zachowuje piksele gotowego obrazu.",
+        ),
         PngMode::Palette => t(
             "Paleta: ogranicza liczbę kolorów. Może dać mniejszy plik, ale zmienia wygląd obrazu.",
         ),
         PngMode::Zopfli => t(
-            "Zopfli: szuka lepszej kompresji bez zmiany pikseli. Działa wolniej; wynik nie zawsze jest mniejszy.",
+            "Zopfli: dodatkowa kompresja, limit 10 s (dokładniej: 30 s). Po limicie zachowuje wynik OxiPNG.",
         ),
     }
 }
