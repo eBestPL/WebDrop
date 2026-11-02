@@ -13,6 +13,7 @@ fn run(input: &Path, output: &Path, settings: &Settings) -> image_optimizer::opt
 }
 fn lossless() -> Settings {
     Settings {
+        format: OutputFormat::Webp,
         webp_mode: WebpMode::Lossless,
         ..Default::default()
     }

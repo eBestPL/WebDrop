@@ -158,15 +158,15 @@ pub fn english_message(source: &str) -> String {
     if let Some((_, en)) = MESSAGES.iter().find(|(pl, _)| *pl == source) {
         return (*en).into();
     }
+    for &(pl, en) in MESSAGES.iter().filter(|(pl, _)| pl.contains("{0}")) {
+        if let Some(values) = capture(pl, source) {
+            return render(en, &values);
+        }
+    }
     // anyhow context chains: translate a known context, then the remaining diagnostic.
     for &(pl, en) in MESSAGES.iter().filter(|(pl, _)| !pl.contains('{')) {
         if let Some(rest) = source.strip_prefix(pl).and_then(|s| s.strip_prefix(": ")) {
             return format!("{en}: {}", english_message(rest));
-        }
-    }
-    for &(pl, en) in MESSAGES.iter().filter(|(pl, _)| pl.contains("{0}")) {
-        if let Some(values) = capture(pl, source) {
-            return render(en, &values);
         }
     }
     source.to_owned()

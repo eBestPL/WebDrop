@@ -27,7 +27,7 @@ struct Args {
     /// Atomically replace same-format originals. Format conversions keep the source.
     #[arg(long)]
     overwrite_originals: bool,
-    #[arg(long, value_enum, default_value_t = OutputFormat::Webp)]
+    #[arg(long, value_enum, default_value_t = OutputFormat::Smart)]
     format: OutputFormat,
     /// Maximum width, without upscaling. 0 keeps original dimensions.
     #[arg(long, default_value_t = 1500)]
@@ -44,6 +44,9 @@ struct Args {
     /// Lossless JPEG XL encoding after trimming/resizing and conversion to 8-bit sRGB.
     #[arg(long)]
     jxl_lossless: bool,
+    /// Include JPEG XL in smart format selection. Check support in your target app/site.
+    #[arg(long)]
+    smart_jxl: bool,
     #[arg(long)]
     thorough: bool,
     /// Remove margins before resizing. SVG always stays SVG; trim changes only its viewport.
@@ -88,6 +91,7 @@ fn run() -> anyhow::Result<()> {
             webp_mode: args.webp_mode,
             avif_lossless: args.avif_lossless,
             jxl_lossless: args.jxl_lossless,
+            smart_jxl: args.smart_jxl,
             thorough: args.thorough,
             trim: args.trim,
             trim_tolerance: args.trim_tolerance,

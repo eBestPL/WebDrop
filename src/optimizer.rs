@@ -2,11 +2,14 @@ use anyhow::{Context, Result, bail, ensure};
 use image::{DynamicImage, GenericImageView, ImageDecoder, ImageFormat, ImageReader, RgbaImage};
 use std::{
     ffi::OsString,
-    fs::{self, File},
+    fs,
     io::{Cursor, Read, Write},
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
 };
+
+#[path = "smart.rs"]
+mod smart;
 
 const MAX_INPUT_BYTES: u64 = 128 * 1024 * 1024;
 const MAX_PIXELS: u64 = 64_000_000;
@@ -40,6 +43,7 @@ impl TrimMode {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
 pub enum OutputFormat {
+    Smart,
     Hybrid,
     Webp,
     Avif,
@@ -58,6 +62,8 @@ impl OutputFormat {
                     .any(|ext| extension.eq_ignore_ascii_case(ext)))
         {
             "SVG"
+        } else if self == Self::Smart {
+            "Auto"
         } else if self == Self::Hybrid {
             "WebP"
         } else {
@@ -67,6 +73,7 @@ impl OutputFormat {
 
     pub fn label(self) -> &'static str {
         match self {
+            Self::Smart => "Inteligentny · najmniejszy",
             Self::Hybrid => "Hybrydowy · SVG / WebP",
             Self::Webp => "WebP",
             Self::Avif => "AVIF",
@@ -124,6 +131,7 @@ pub struct Settings {
     pub webp_mode: WebpMode,
     pub avif_lossless: bool,
     pub jxl_lossless: bool,
+    pub smart_jxl: bool,
     pub thorough: bool,
     pub trim: TrimMode,
     pub trim_tolerance: u8,
@@ -134,7 +142,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            format: OutputFormat::Webp,
+            format: OutputFormat::Smart,
             overwrite_originals: false,
             max_width: Some(1500),
             quality: 82,
@@ -142,6 +150,7 @@ impl Default for Settings {
             webp_mode: WebpMode::Lossy,
             avif_lossless: false,
             jxl_lossless: false,
+            smart_jxl: false,
             thorough: false,
             trim: TrimMode::Off,
             trim_tolerance: 8,
@@ -232,7 +241,7 @@ pub fn optimize(
         settings.trim_tolerance <= 64,
         "Tolerancja trim musi być w zakresie 0–64"
     );
-    let file = File::open(input).context("Nie można otworzyć pliku")?;
+    let file = crate::file_io::open_regular(input).context("Nie można otworzyć pliku")?;
     ensure!(file.metadata()?.is_file(), "Przeciągnij pliki, nie foldery");
     ensure!(
         file.metadata()?.len() <= MAX_INPUT_BYTES,
@@ -425,7 +434,7 @@ pub fn optimize(
         settings.max_width,
     );
     let resized = dimensions != content_dimensions;
-    let format = match settings.format {
+    let mut format = match settings.format {
         OutputFormat::Hybrid => OutputFormat::Webp,
         OutputFormat::Original => input_format.unwrap_or(OutputFormat::Webp),
         format => format,
@@ -477,6 +486,12 @@ pub fn optimize(
         }
         check_cancel(cancel)?;
         match format {
+            OutputFormat::Smart => {
+                let selected = smart::encode(&rgba, settings, cancel)?;
+                format = selected.format;
+                notes.extend(selected.notes);
+                (selected.bytes, selected.encoder)
+            }
             OutputFormat::Webp => (encode_webp(&rgba, settings)?, "libwebp"),
             OutputFormat::Jpeg => (encode_jpeg(&rgba, settings)?, "MozJPEG"),
             OutputFormat::Png => {
@@ -500,7 +515,10 @@ pub fn optimize(
             _ => unreachable!(),
         }
     };
-    if format == OutputFormat::Png && settings.png_mode == PngMode::Auto {
+    if format == OutputFormat::Png
+        && settings.png_mode == PngMode::Auto
+        && settings.format != OutputFormat::Smart
+    {
         (encoded, encoder) = auto_png(encoded, settings, cancel, &mut notes)?;
     }
     check_cancel(cancel)?;
@@ -528,6 +546,15 @@ pub fn optimize(
         encoder,
         notes,
     })
+}
+
+pub(crate) fn smart_encode_worker(
+    data: &[u8],
+    kind: &str,
+    quality: u8,
+    thorough: bool,
+) -> Result<Vec<u8>> {
+    smart::worker_encode(data, kind, quality, thorough)
 }
 
 /// Crop only outer margins; matching colors inside the content remain untouched.
@@ -645,10 +672,20 @@ fn zopfli_png(
 /// Compare encodings of exactly the same resized/trimmed image. Never relax the
 /// requested width. Zopfli runs only once, after choosing the smaller candidate.
 fn auto_png(
+    best: Vec<u8>,
+    settings: &Settings,
+    cancel: &AtomicBool,
+    notes: &mut Vec<String>,
+) -> Result<(Vec<u8>, &'static str)> {
+    auto_png_candidate(best, settings, cancel, notes, true)
+}
+
+fn auto_png_candidate(
     mut best: Vec<u8>,
     settings: &Settings,
     cancel: &AtomicBool,
     notes: &mut Vec<String>,
+    use_zopfli: bool,
 ) -> Result<(Vec<u8>, &'static str)> {
     check_cancel(cancel)?;
     let img = image::load_from_memory_with_format(&best, ImageFormat::Png)?;
@@ -679,7 +716,11 @@ fn auto_png(
         }
     }
     drop(img);
-    let (best, encoder) = zopfli_png(best, settings, cancel, notes)?;
+    let (best, encoder) = if use_zopfli {
+        zopfli_png(best, settings, cancel, notes)?
+    } else {
+        (best, "OxiPNG")
+    };
     if palette_selected {
         notes.push("Auto PNG: wybrano mniejszą paletę przy wysokiej jakości. Kolory mogą się minimalnie różnić; wybrana szerokość została zachowana.".into());
         Ok((
@@ -960,7 +1001,7 @@ fn save_output(
         "Oryginał zmienił się podczas konwersji. Dodaj plik ponownie."
     );
     let mut current = Vec::new();
-    File::open(input)?
+    crate::file_io::open_regular(input)?
         .take(original.len() as u64 + 1)
         .read_to_end(&mut current)?;
     ensure!(

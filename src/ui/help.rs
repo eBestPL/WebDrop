@@ -26,6 +26,9 @@ pub fn trim_description(mode: TrimMode) -> &'static str {
 
 pub fn format_description(format: OutputFormat) -> &'static str {
     match format {
+        OutputFormat::Smart => t(
+            "Porównuje PNG, WebP, JPG i AVIF przy wybranych wymiarach. Zapisuje najmniejszy wynik. SVG pozostaje SVG.",
+        ),
         OutputFormat::Hybrid => t(
             "AI, EPS, PDF, SVG → SVG. Pozostałe → WebP. Rozmiar i jakość dotyczą tylko WebP; SVG: tylko trim.",
         ),
@@ -51,9 +54,9 @@ pub fn webp_description(mode: WebpMode) -> &'static str {
         WebpMode::Lossy => {
             t("Zmniejsza plik kosztem części szczegółów. Wyższa jakość zwykle daje większy plik.")
         }
-        WebpMode::Lossless => t(
-            "Zachowuje piksele po przycięciu i skalowaniu. Dobre do logo; jakość 1–100 nie ma tu wpływu.",
-        ),
+        WebpMode::Lossless => {
+            t("Zachowuje piksele. Dobre do logo; zdjęcia JPG mogą dać większy plik.")
+        }
         WebpMode::NearLossless => t(
             "Lekko upraszcza piksele, aby zmniejszyć plik. Wyższa jakość zachowuje więcej szczegółów.",
         ),
@@ -79,6 +82,9 @@ pub fn png_description(mode: PngMode) -> &'static str {
 
 pub fn compression_description(settings: &Settings) -> &'static str {
     match settings.format {
+        OutputFormat::Smart => t(
+            "Jakość dotyczy prób stratnych. Porównuje też bezstratny WebP i Auto PNG. JPEG XL możesz włączyć w Ustawieniach.",
+        ),
         OutputFormat::Webp | OutputFormat::Hybrid => webp_description(settings.webp_mode),
         OutputFormat::Avif => modern_description(settings.avif_lossless),
         OutputFormat::Jxl => modern_description(settings.jxl_lossless),

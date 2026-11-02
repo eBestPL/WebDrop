@@ -9,3 +9,5 @@ mod webp_encoder;
 mod vector;
 
 pub mod png_worker;
+
+mod file_io;

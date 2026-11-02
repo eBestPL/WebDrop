@@ -25,4 +25,5 @@ iconutil -c icns artifacts/AppIcon.iconset -o "$app/Contents/Resources/AppIcon.i
 printf 'APPL????' > "$app/Contents/PkgInfo"
 codesign --force --sign - "$app"
 codesign --verify --deep --strict "$app"
+touch -r "$app/Contents/MacOS/image-optimizer" "$app"
 printf '\nGotowa aplikacja: %s\n' "$app"

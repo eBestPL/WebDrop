@@ -1,9 +1,9 @@
-//! Zopfli runs in a killable child process; a thread cannot provide a hard timeout.
+//! Optional encoders run in killable child processes; threads cannot provide hard timeouts.
 use anyhow::{Context, Result, bail, ensure};
 use std::{
     ffi::OsString,
     fs::{self, File},
-    io::Read,
+    io::{Read, Write},
     num::NonZeroU64,
     path::PathBuf,
     process::{Child, Command, ExitStatus, Stdio},
@@ -26,12 +26,29 @@ pub fn configure_executable(path: PathBuf) {
 /// Private CLI entry, handled before GUI startup. Never writes to a user source file.
 pub fn worker_entry() -> Option<Result<()>> {
     let mut args = std::env::args_os().skip(1);
-    if args.next().as_deref() != Some(std::ffi::OsStr::new("--internal-png-zopfli")) {
+    let flag = args.next()?;
+    let smart = flag == "--internal-smart-encode";
+    if flag != "--internal-png-zopfli" && !smart {
         return None;
     }
     Some((|| {
         let input = PathBuf::from(args.next().context("Missing PNG worker input")?);
         let output = PathBuf::from(args.next().context("Missing PNG worker output")?);
+        let kind = if smart {
+            Some(args.next().context("Missing smart encoder")?)
+        } else {
+            None
+        };
+        let quality = if smart {
+            args.next()
+                .context("Missing smart quality")?
+                .to_str()
+                .context("Invalid smart quality")?
+                .parse::<u8>()?
+        } else {
+            82
+        };
+        ensure!((1..=100).contains(&quality), "Invalid smart quality");
         let effort = args.next().context("Missing PNG worker effort")?;
         ensure!(args.next().is_none(), "Unexpected PNG worker arguments");
         ensure!(
@@ -39,13 +56,23 @@ pub fn worker_entry() -> Option<Result<()>> {
             "Invalid PNG worker effort"
         );
         let mut data = Vec::new();
-        File::open(input)?
+        crate::file_io::open_regular(&input)?
             .take(MAX_BYTES + 1)
             .read_to_end(&mut data)?;
         ensure!(
             data.len() as u64 <= MAX_BYTES,
             "PNG worker input exceeds limit"
         );
+        if let Some(kind) = kind {
+            let encoded = crate::optimizer::smart_encode_worker(
+                &data,
+                kind.to_str().context("Invalid smart encoder")?,
+                quality,
+                effort == "thorough",
+            )?;
+            write_new(&output, &encoded)?;
+            return Ok(());
+        }
         let mut options = oxipng::Options::from_preset(3);
         options.strip = oxipng::StripChunks::All;
         options.max_decompressed_size = Some(512 * 1024 * 1024);
@@ -58,9 +85,17 @@ pub fn worker_entry() -> Option<Result<()>> {
         });
         let encoded = oxipng::optimize_from_memory(&data, &options)?;
         crate::metadata::verify_chunks(&encoded, false)?;
-        fs::write(output, encoded)?;
+        write_new(&output, &encoded)?;
         Ok(())
     })())
+}
+
+// A malformed or manually invoked worker must never truncate an existing file,
+// including a source file or a symlink. Parent jobs use fresh private directories.
+fn write_new(path: &std::path::Path, bytes: &[u8]) -> Result<()> {
+    let mut file = File::options().write(true).create_new(true).open(path)?;
+    file.write_all(bytes)?;
+    Ok(())
 }
 
 struct Process(Child);
@@ -92,12 +127,48 @@ pub(crate) enum Attempt {
 }
 
 pub(crate) fn optimize(data: &[u8], thorough: bool, cancel: &AtomicBool) -> Result<Attempt> {
+    run(
+        data,
+        "--internal-png-zopfli",
+        &[OsString::from(if thorough { "thorough" } else { "normal" })],
+        cancel,
+        Duration::from_secs(if thorough { 30 } else { 10 }),
+    )
+}
+
+pub(crate) fn smart(
+    data: &[u8],
+    kind: &str,
+    quality: u8,
+    thorough: bool,
+    cancel: &AtomicBool,
+) -> Result<Attempt> {
+    run(
+        data,
+        "--internal-smart-encode",
+        &[
+            kind.into(),
+            quality.to_string().into(),
+            OsString::from(if thorough { "thorough" } else { "normal" }),
+        ],
+        cancel,
+        Duration::from_secs(if thorough { 15 } else { 5 }),
+    )
+}
+
+fn run(
+    data: &[u8],
+    flag: &str,
+    arguments: &[OsString],
+    cancel: &AtomicBool,
+    timeout: Duration,
+) -> Result<Attempt> {
     ensure!(!cancel.load(Ordering::Relaxed), "Anulowano");
     let program = EXECUTABLE
         .get()
         .context("PNG worker executable is not configured")?;
     let directory = tempfile::Builder::new()
-        .prefix("webdrop-zopfli-")
+        .prefix("webdrop-encoder-")
         .tempdir()?;
     let input = directory.path().join("input.png");
     let output = directory.path().join("output.png");
@@ -105,11 +176,11 @@ pub(crate) fn optimize(data: &[u8], thorough: bool, cancel: &AtomicBool) -> Resu
     let mut command = Command::new(program);
     command
         .args([
-            OsString::from("--internal-png-zopfli"),
+            OsString::from(flag),
             input.into_os_string(),
             output.clone().into_os_string(),
-            OsString::from(if thorough { "thorough" } else { "normal" }),
         ])
+        .args(arguments)
         .env("RAYON_NUM_THREADS", "2")
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -120,11 +191,7 @@ pub(crate) fn optimize(data: &[u8], thorough: bool, cancel: &AtomicBool) -> Resu
         command.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
     }
     let mut child = Process(command.spawn().context("Cannot start PNG worker")?);
-    let status = wait(
-        &mut child,
-        cancel,
-        Duration::from_secs(if thorough { 30 } else { 10 }),
-    )?;
+    let status = wait(&mut child, cancel, timeout)?;
     // Reap before reading results or dropping the temporary directory.
     drop(child);
     match status {
@@ -138,7 +205,10 @@ pub(crate) fn optimize(data: &[u8], thorough: bool, cancel: &AtomicBool) -> Resu
                 encoded.len() as u64 <= MAX_BYTES,
                 "PNG worker output exceeds limit"
             );
-            crate::metadata::verify_chunks(&encoded, false)?;
+            ensure!(!encoded.is_empty(), "Empty encoder result");
+            if flag == "--internal-png-zopfli" {
+                crate::metadata::verify_chunks(&encoded, false)?;
+            }
             Ok(Attempt::Finished(encoded))
         }
         Some(_) => bail!("PNG worker failed"),

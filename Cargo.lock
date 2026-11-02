@@ -1498,6 +1498,7 @@ dependencies = [
  "image",
  "imagequant",
  "lcms2",
+ "libc",
  "libwebp-sys",
  "mozjpeg",
  "oxipng",

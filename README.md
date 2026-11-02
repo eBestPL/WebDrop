@@ -16,20 +16,21 @@ Optimize images and convert whole folders for the web. Free, local, no uploads.
 
 [SHA-256 checksums](dist/SHA256SUMS.txt)
 
-![WebDrop in dark mode — Hybrid batch conversion](docs/screenshots/batch-dark-en.jpg)
+![WebDrop in dark mode — Smart format selection and batch results](docs/screenshots/batch-dark-en.jpg)
 
 ## How to use
 
 1. Drop images or folders into the window. Subfolders are included.
-2. Choose your settings, then click **Start conversion**.
+2. Click **Start conversion**. Smart mode picks the format for you.
 3. Find the results in **Downloads**, or choose the source folder or a custom location.
 
-Defaults: **WebP · up to 1500 px wide · quality 82**. Originals are kept by default. Choose **Save to → Overwrite originals** to replace same-format sources; format conversions keep the source. Use **Re-run** to process the same files with different settings.
+Defaults: **Smart · up to 1500 px wide**. Optional: change the width or enable **Trim empty edges** for logos. Originals are kept by default. Choose **Save to → Overwrite originals** to replace same-format sources; format conversions keep the source. Use **Re-run** to process the same files with different settings.
 
 ## Features
 
 - **Formats:** PNG, JPG, WebP, AI, PDF, EPS, TIFF, HEIC, SVG, AVIF and JPEG XL.*
 - **Resize:** presets or a custom width, keeping proportions; no upscaling.
+- **Smart format:** automatically compares suitable PNG, WebP, JPG and AVIF variants for photos or graphics. Enable a more exhaustive comparison in Settings, or choose a format manually. JPEG XL is optional in Settings. Saves only the smallest completed result at the chosen dimensions; preserves transparency. Includes lossy modes.
 - **Auto PNG:** compares lossless compression with a high-quality palette at the chosen size. Keeps the smaller file, then applies Zopfli. Colors may change slightly; lossless modes are also available.
 - **Logo preset:** lossless WebP with **trim** — removes transparent or solid-color outer margins, not the background inside a logo.
 - **Hybrid mode:** AI/PDF/EPS → SVG; raster images → WebP.
@@ -39,7 +40,7 @@ Defaults: **WebP · up to 1500 px wide · quality 82**. Originals are kept by de
 
 *AI must be PDF-compatible. TIFF/HEIC and AI/PDF rasterization are macOS-only. Windows/Linux need MuPDF (`mutool` in PATH) for AI/PDF → SVG, plus Ghostscript for EPS. Both tools are bundled on macOS.*
 
-![WebDrop in light mode — Logo preset with trimming](docs/screenshots/logo-light-en.jpg)
+![WebDrop in light mode — Manual WebP conversion with logo trimming](docs/screenshots/logo-light-en.jpg)
 
 <details>
 <summary>Build from source (macOS)</summary>

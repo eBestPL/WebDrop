@@ -54,6 +54,8 @@ struct Row {
 
 pub struct OptimizerApp {
     settings: Settings,
+    manual_format: OutputFormat,
+    custom_width: bool,
     rows: Vec<Row>,
     scans: Vec<inputs::Scan>,
     jobs: Sender<Job>,
@@ -106,6 +108,8 @@ impl OptimizerApp {
             .expect("Cannot create optimizer worker");
         let mut app = Self {
             settings: Settings::default(),
+            manual_format: OutputFormat::Hybrid,
+            custom_width: false,
             rows: Vec::new(),
             scans: Vec::new(),
             jobs,
@@ -180,11 +184,11 @@ impl OptimizerApp {
             .rows
             .iter()
             .filter(|row| matches!(row.status, Status::Ready) || row.status.pending())
-            .map(|row| row.input.clone())
+            .map(|row| inputs::identity(&row.input))
             .collect();
         for input in paths {
             // A staged or submitted file should appear only once until its job ends.
-            if !staged.insert(input.clone()) {
+            if !staged.insert(inputs::identity(&input)) {
                 continue;
             }
             let id = self.next_id;
@@ -245,13 +249,13 @@ impl OptimizerApp {
             .rows
             .iter()
             .filter(|row| matches!(row.status, Status::Ready))
-            .map(|row| row.input.clone())
+            .map(|row| inputs::identity(&row.input))
             .collect();
         let mut count = 0;
         for row in &mut self.rows {
             if id.is_none_or(|id| id == row.id)
                 && Self::can_prepare_again(row)
-                && staged.insert(row.input.clone())
+                && staged.insert(inputs::identity(&row.input))
             {
                 row.status = Status::Ready;
                 count += 1;
@@ -319,7 +323,11 @@ impl OptimizerApp {
             return;
         }
         let p = Palette::of(ui);
-        let label = if ready > 0 {
+        let label = if pending > 0 && self.cancel.load(Ordering::Relaxed) {
+            t("Anulowanie…").to_owned()
+        } else if pending > 0 {
+            t("Konwersja w toku…").to_owned()
+        } else if ready > 0 {
             f("Rozpocznij konwersję · {0}", &[&ready])
         } else {
             t("Konwersja w toku…").to_owned()
@@ -388,7 +396,6 @@ impl OptimizerApp {
 
     fn cancel_queue(&mut self) {
         self.cancel.store(true, Ordering::Relaxed);
-        self.cancel = Arc::new(AtomicBool::new(false));
         self.notice = Some("Anulowanie kolejki…".into());
     }
 
@@ -544,11 +551,9 @@ impl OptimizerApp {
                         );
                         if medium {
                             ui.label(
-                                RichText::new(t(
-                                    "Foldery obejmują podfoldery. Konwersję uruchomisz przyciskiem.",
-                                ))
-                                .size(12.0)
-                                .color(p.muted),
+                                RichText::new(t("Możesz dodać też całe foldery z podfolderami."))
+                                    .size(12.0)
+                                    .color(p.muted),
                             );
                         }
                         ui.add_space(2.0);
@@ -574,9 +579,9 @@ impl OptimizerApp {
                         if medium {
                             ui.label(
                                 RichText::new(if cfg!(target_os = "macos") {
-                                    "PNG · JPG · WebP · AVIF · JXL · AI/EPS · TIFF · HEIC · SVG"
+                                    "PNG · JPG · WebP · SVG · AI/PDF/EPS · TIFF · HEIC"
                                 } else {
-                                    "PNG · JPG · WebP · AVIF · JXL · AI/PDF · EPS · SVG"
+                                    "PNG · JPG · WebP · SVG · AI/PDF/EPS · AVIF · JXL"
                                 })
                                 .size(12.0)
                                 .color(p.muted),
@@ -593,6 +598,7 @@ impl OptimizerApp {
         self.settings.max_width = Some(1500);
         self.settings.trim = TrimMode::Background;
         self.settings.trim_tolerance = 8;
+        self.custom_width = false;
     }
 
     fn export_sidebar(&mut self, ui: &mut egui::Ui) -> (egui::Rect, egui::Rect) {
@@ -693,87 +699,55 @@ impl OptimizerApp {
         );
     }
 
+    fn switch_mode(&mut self, smart: bool) {
+        if smart && self.settings.format != OutputFormat::Smart {
+            self.manual_format = self.settings.format;
+            self.settings.format = OutputFormat::Smart;
+        } else if !smart && self.settings.format == OutputFormat::Smart {
+            self.settings.format = self.manual_format;
+        }
+    }
+
+    fn remove_row(&mut self, id: u64) {
+        self.rows.retain(|row| row.id != id || row.status.pending());
+        if self.detail_row == Some(id) && !self.rows.iter().any(|row| row.id == id) {
+            self.detail_row = None;
+        }
+    }
+
     fn settings_ui(&mut self, ui: &mut egui::Ui) {
+        let mut smart = self.settings.format == OutputFormat::Smart;
+        segments(
+            ui,
+            &mut smart,
+            &[(true, t("Inteligentny")), (false, t("Ręczny"))],
+        );
+        self.switch_mode(smart);
+        if self.settings.format == OutputFormat::Smart {
+            self.smart_settings_ui(ui);
+            return;
+        }
         let p = Palette::of(ui);
-        let web = self.settings.format == OutputFormat::Webp
-            && self.settings.webp_mode == WebpMode::Lossy
-            && self.settings.max_width == Some(1500)
-            && self.settings.quality == 82
-            && self.settings.trim == TrimMode::Off;
-        let logo = self.settings.format == OutputFormat::Webp
-            && self.settings.webp_mode == WebpMode::Lossless
-            && self.settings.max_width == Some(1500)
-            && self.settings.trim == TrimMode::Background
-            && self.settings.trim_tolerance == 8;
-        ui.columns(2, |columns| {
-            if appearance::preset(
-                &mut columns[0],
-                t("Na web"),
-                t("WebP · 1500 px"),
-                web,
-                false,
-            )
-            .on_hover_text(t("Dla zdjęć i obrazów na stronę: WebP stratny, jakość 82, do 1500 px szerokości. Zostawia marginesy."))
+        if ui
+            .button(t("Ustawienia dla logo"))
+            .on_hover_text(t("WebP bezstratny, do 1500 px, przycięte marginesy."))
             .clicked()
-            {
-                self.settings.format = OutputFormat::Webp;
-                self.settings.webp_mode = WebpMode::Lossy;
-                self.settings.max_width = Some(1500);
-                self.settings.quality = 82;
-                self.settings.trim = TrimMode::Off;
-            }
-            if appearance::preset(
-                &mut columns[1],
-                "Logo",
-                t("Bezstratnie · trim"),
-                logo,
-                true,
-            )
-            .on_hover_text(
-                t("Dla logo: WebP bezstratny, do 1500 px. Przycina jednolite i przezroczyste brzegi, potem skaluje. SVG pozostaje SVG."),
-            )
-            .clicked()
-            {
-                self.logo_preset();
-            }
-        });
+        {
+            self.logo_preset();
+        }
         Self::card(ui).inner_margin(16).show(ui, |ui| {
             ui.set_min_width(ui.available_width());
             ui.spacing_mut().item_spacing.y = 6.0;
             Self::export_row(ui, "Format", |ui| {
                 egui::ComboBox::from_id_salt("output-format")
                     .selected_text(t(self.settings.format.label())).width(ui.available_width()).truncate().show_ui(ui, |ui| {
-                        for format in [OutputFormat::Hybrid, OutputFormat::Webp, OutputFormat::Png, OutputFormat::Jpeg, OutputFormat::Original, OutputFormat::Avif, OutputFormat::Jxl] {
+                        for format in [OutputFormat::Webp, OutputFormat::Png, OutputFormat::Jpeg, OutputFormat::Hybrid, OutputFormat::Original, OutputFormat::Avif, OutputFormat::Jxl] {
                             Self::explained_option(ui, &mut self.settings.format, format, t(format.label()), help::format_description(format));
                         }
                     });
             });
             Self::setting_hint(ui, help::format_description(self.settings.format));
-            Self::export_row(ui, t("Szerokość"), |ui| {
-                ui.horizontal(|ui| {
-                    let selected = match self.settings.max_width {
-                        None => t("Pełna").to_owned(),
-                        Some(width @ (1500 | 1000 | 700 | 500)) => format!("{width} px"),
-                        Some(_) => t("Własna szerokość").to_owned(),
-                    };
-                    egui::ComboBox::from_id_salt("resize-width")
-                        .selected_text(selected).width((ui.available_width() - 100.0).max(90.0)).truncate()
-                        .show_ui(ui, |ui| {
-                            for width in [1500, 1000, 700, 500] {
-                                ui.selectable_value(&mut self.settings.max_width, Some(width), format!("{width} px"));
-                            }
-                            ui.selectable_value(&mut self.settings.max_width, None, t("Pełna"));
-                            let custom = self.settings.max_width.is_some_and(|w| ![1500, 1000, 700, 500].contains(&w));
-                            if ui.selectable_label(custom, t("Własna szerokość")).clicked() && !custom {
-                                self.settings.max_width = Some(1200);
-                            }
-                        });
-                    if let Some(width) = &mut self.settings.max_width {
-                        ui.add_sized([90.0, 24.0], egui::DragValue::new(width).range(1..=65_535).speed(10.0).suffix(" px"))
-                            .on_hover_text(t("Wpisz dowolną szerokość od 1 do 65535 px. Wysokość jest proporcjonalna. Mniejsze obrazy nie są powiększane."));
-                    }
-                });
-            });
+            self.width_control(ui);
             Self::export_row(ui, t("Marginesy"), |ui| {
                 egui::ComboBox::from_id_salt("trim").selected_text(help::trim_label(self.settings.trim))
                     .width(ui.available_width()).truncate().show_ui(ui, |ui| {
@@ -837,7 +811,7 @@ impl OptimizerApp {
                                 }
                             });
                     }
-                    OutputFormat::Jpeg => {
+                    OutputFormat::Smart | OutputFormat::Jpeg => {
                         ui.horizontal(|ui| {
                             ui.label(RichText::new(t("Jakość")).color(p.muted));
                             ui.add(egui::Slider::new(&mut self.settings.quality, 1..=100));
@@ -859,6 +833,112 @@ impl OptimizerApp {
             ui.add_space(8.0);
                 ui.label(RichText::new(t("SVG: tylko marginesy")).size(11.0).color(p.muted))
                     .on_hover_text(t("SVG pozostaje SVG. Bez optymalizacji, konwersji i usuwania metadanych. Trim zmienia wyłącznie obszar dokumentu."));
+        });
+    }
+
+    fn smart_settings_ui(&mut self, ui: &mut egui::Ui) {
+        let p = Palette::of(ui);
+        Self::card(ui).inner_margin(18).show(ui, |ui| {
+            ui.set_min_width(ui.available_width());
+            ui.spacing_mut().item_spacing.y = 10.0;
+            ui.add(
+                egui::Label::new(
+                    RichText::new(t(
+                        "Automatycznie dobiera format, który daje najmniejszy plik wynikowy.",
+                    ))
+                    .size(13.0),
+                )
+                .wrap(),
+            )
+            .on_hover_text(help::format_description(OutputFormat::Smart));
+            ui.add_space(4.0);
+            ui.separator();
+            ui.add_space(4.0);
+            self.width_control(ui);
+            ui.add(
+                egui::Label::new(
+                    RichText::new(t("Bez powiększania. Wysokość proporcjonalna."))
+                        .size(12.0)
+                        .color(p.muted),
+                )
+                .wrap(),
+            );
+            ui.add_space(4.0);
+            let mut trim = self.settings.trim != TrimMode::Off;
+            if ui.checkbox(&mut trim, t("Przytnij puste brzegi")).changed() {
+                self.settings.trim = if trim {
+                    TrimMode::Background
+                } else {
+                    TrimMode::Off
+                };
+            }
+            ui.add(
+                egui::Label::new(
+                    RichText::new(if self.settings.trim == TrimMode::Transparent {
+                        help::trim_description(TrimMode::Transparent)
+                    } else {
+                        t("Usuwa jednolite i przezroczyste marginesy, np. wokół logo.")
+                    })
+                    .size(12.0)
+                    .color(p.muted),
+                )
+                .wrap(),
+            );
+        });
+        ui.add_space(4.0);
+        ui.add(
+            egui::Label::new(
+                RichText::new(t("Dopuszcza kompresję stratną. SVG pozostaje SVG."))
+                    .size(12.0)
+                    .color(p.muted),
+            )
+            .wrap(),
+        );
+        if self.settings.thorough || self.settings.smart_jxl {
+            ui.label(
+                RichText::new(t("Aktywne rozszerzone porównanie w Ustawieniach"))
+                    .size(11.0)
+                    .color(p.accent),
+            );
+        }
+    }
+
+    fn width_control(&mut self, ui: &mut egui::Ui) {
+        if self
+            .settings
+            .max_width
+            .is_some_and(|w| ![1500, 1000, 700, 500].contains(&w))
+        {
+            self.custom_width = true;
+        }
+        let width = &mut self.settings.max_width;
+        let custom = &mut self.custom_width;
+        Self::export_row(ui, t("Szerokość"), |ui| {
+            ui.horizontal(|ui| {
+                let selected = if *custom && width.is_some() { t("Własna szerokość").into() } else {
+                    width.map_or_else(|| t("Pełna").to_owned(), |w| format!("{w} px"))
+                };
+                let field_width = if *custom && width.is_some() { 100.0 } else { 0.0 };
+                egui::ComboBox::from_id_salt("resize-width")
+                    .selected_text(selected).width((ui.available_width() - field_width).max(90.0)).truncate()
+                    .show_ui(ui, |ui| {
+                        for value in [1500, 1000, 700, 500] {
+                            if ui.selectable_label(!*custom && *width == Some(value), format!("{value} px")).clicked() {
+                                *width = Some(value); *custom = false; ui.close();
+                            }
+                        }
+                        if ui.selectable_label(width.is_none(), t("Pełna")).clicked() {
+                            *width = None; *custom = false; ui.close();
+                        }
+                        if ui.selectable_label(*custom && width.is_some(), t("Własna szerokość")).clicked() {
+                            *custom = true; width.get_or_insert(1500); ui.close();
+                        }
+                    });
+                if *custom && let Some(value) = width.as_mut() {
+                    ui.add_sized([90.0, 24.0], egui::DragValue::new(value).range(1..=65_535).speed(10.0).suffix(" px"))
+                        .on_hover_text(t("Wpisz dowolną szerokość od 1 do 65535 px. Wysokość jest proporcjonalna. Mniejsze obrazy nie są powiększane."));
+                }
+            });
         });
     }
 
@@ -998,6 +1078,7 @@ impl OptimizerApp {
                                 ui.add_enabled(!lossless, egui::Slider::new(&mut self.settings.quality, 1..=100).suffix(" / 100"));
                             });
                             ui.label(RichText::new(t("Jakość 1–100: wyżej = więcej szczegółów i zwykle większy plik. 82 nie oznacza 82% rozmiaru ani jakości oryginału.")).size(12.0).color(p.muted));
+                            if self.settings.format != OutputFormat::Smart {
                             Self::setting_row(ui, "WebP", |ui| {
                                 egui::ComboBox::from_id_salt("webp-mode").selected_text(t(self.settings.webp_mode.label()))
                                     .width(ui.available_width()).truncate().show_ui(ui, |ui| {
@@ -1018,7 +1099,10 @@ impl OptimizerApp {
                                 });
                             }
                             ui.label(RichText::new(t("AVIF/JXL: jakość dotyczy trybu stratnego. Bezstratny zachowuje piksele gotowego obrazu w 8-bitowym sRGB.")).size(12.0).color(p.muted));
-                            ui.checkbox(&mut self.settings.thorough, t("Dokładniejsza kompresja"));
+                            }
+                            ui.checkbox(&mut self.settings.smart_jxl, t("Inteligentny: uwzględniaj JPEG XL"))
+                                .on_hover_text(t("Może dać mniejszy plik. Sprawdź obsługę JPEG XL w docelowej aplikacji lub witrynie."));
+                            ui.checkbox(&mut self.settings.thorough, t(if self.settings.format == OutputFormat::Smart { "Porównaj więcej wariantów (wolniej)" } else { "Dokładniejsza kompresja" }));
                             ui.label(RichText::new(t("Poświęca więcej czasu na kompresję. Zachowuje wybrany tryb i jakość; nie gwarantuje mniejszego wyniku.")).size(12.0).color(p.muted));
                             egui::CollapsingHeader::new(t("Co oznacza bezstratnie?")).show(ui, |ui| {
                                 ui.label(t("Bezstratny WebP zachowuje piksele gotowego obrazu po renderowaniu, przycięciu i skalowaniu. Jakość 1–100 nie wpływa na ten tryb. Dla prostych logo może dać mniejszy plik niż kompresja stratna."));
@@ -1244,18 +1328,27 @@ impl OptimizerApp {
             .iter()
             .filter(|r| matches!(r.status, Status::Done(_)))
             .count();
+        let cancelled = self
+            .rows
+            .iter()
+            .filter(|r| matches!(r.status, Status::Cancelled))
+            .count();
         let failed = self
             .rows
             .iter()
             .filter(|r| matches!(r.status, Status::Failed(_)))
             .count();
         ui.horizontal(|ui| {
-            let title = if pending > 0 {
+            let title = if pending > 0 && self.cancel.load(Ordering::Relaxed) {
+                t("Anulowanie…").into()
+            } else if pending > 0 {
                 f("Przetwarzanie · {0}", &[&pending])
             } else if self.ready() > 0 {
                 f("Czeka na start · {0}", &[&self.ready()])
             } else if failed > 0 {
                 f("Gotowe: {0} · Błędy: {1}", &[&done, &failed])
+            } else if cancelled > 0 {
+                f("Gotowe: {0} · Anulowane: {1}", &[&done, &cancelled])
             } else {
                 f("Gotowe · {0}/{1}", &[&done, &self.rows.len()])
             };
@@ -1267,7 +1360,7 @@ impl OptimizerApp {
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if pending > 0 {
-                    if ui.button(t("Anuluj")).clicked() {
+                    if ui.add_enabled(!self.cancel.load(Ordering::Relaxed), egui::Button::new(t("Anuluj"))).clicked() {
                         self.cancel_queue();
                     }
                 } else if ui
@@ -1308,6 +1401,7 @@ impl OptimizerApp {
         }
         let mut reveal = None;
         let mut retry = None;
+        let mut remove = None;
         egui::ScrollArea::vertical()
             .id_salt("file-queue")
             .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
@@ -1406,7 +1500,7 @@ impl OptimizerApp {
                                                     egui::Spinner::new().size(12.0).color(p.accent),
                                                 );
                                                 ui.label(
-                                                    RichText::new(t("Przetwarzanie…"))
+                                                    RichText::new(t(if row.settings.format == OutputFormat::Smart { "Dobieranie formatu…" } else { "Przetwarzanie…" }))
                                                         .size(12.0)
                                                         .color(p.accent),
                                                 );
@@ -1479,6 +1573,12 @@ impl OptimizerApp {
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
+                                        if !row.status.pending() {
+                                            let button = ui.add_sized([24.0, 30.0], egui::Button::new("×").frame(false));
+                                            button.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true,
+                                                f("Usuń z listy: {0}", &[&row.input.file_name().unwrap_or_default().to_string_lossy()])));
+                                            if button.on_hover_text(t("Usuń z listy — plik pozostanie na dysku")).clicked() { remove = Some(row.id); }
+                                        }
                                         if Self::can_prepare_again(row) {
                                             let response = ui.add_enabled(pending == 0,
                                                 egui::Button::new(RichText::new(t("Ponów")).size(12.0))
@@ -1524,7 +1624,7 @@ impl OptimizerApp {
                                                     .color(if savings >= 0.0 || ext == "SVG" {
                                                         p.green
                                                     } else {
-                                                        p.muted
+                                                        p.red
                                                     }),
                                             );
                                         } else if matches!(row.status, Status::Failed(_))
@@ -1538,6 +1638,9 @@ impl OptimizerApp {
                         });
                 }
             });
+        if let Some(id) = remove {
+            self.remove_row(id);
+        }
         if let Some(path) = reveal {
             self.reveal_file(&path);
         }
@@ -1868,6 +1971,8 @@ mod queue_tests {
         (
             OptimizerApp {
                 settings: Settings::default(),
+                manual_format: OutputFormat::Hybrid,
+                custom_width: false,
                 rows: Vec::new(),
                 scans: Vec::new(),
                 jobs,
@@ -1889,6 +1994,61 @@ mod queue_tests {
             },
             work,
         )
+    }
+
+    #[test]
+    fn mode_switch_restores_manual_format_and_keeps_shared_options() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut app, _) = app(dir.path().to_owned());
+        app.switch_mode(false);
+        app.settings.format = OutputFormat::Png;
+        app.settings.max_width = Some(1234);
+        app.settings.trim = TrimMode::Transparent;
+        app.switch_mode(true);
+        assert_eq!(app.settings.format, OutputFormat::Smart);
+        app.switch_mode(false);
+        assert_eq!(app.settings.format, OutputFormat::Png);
+        assert_eq!(app.settings.max_width, Some(1234));
+        assert_eq!(app.settings.trim, TrimMode::Transparent);
+    }
+
+    #[test]
+    fn remove_only_idle_rows_and_cancel_token_stays_set_until_next_start() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut app, work) = app(dir.path().to_owned());
+        let input = dir.path().join("source.png");
+        std::fs::write(&input, b"unchanged").unwrap();
+        app.enqueue(vec![input.clone()]);
+        app.detail_row = Some(app.rows[0].id);
+        app.remove_row(app.rows[0].id);
+        assert!(app.rows.is_empty() && app.detail_row.is_none());
+        assert_eq!(std::fs::read(&input).unwrap(), b"unchanged");
+        app.enqueue(vec![input]);
+        app.start_conversion();
+        let job = work.try_recv().unwrap();
+        app.remove_row(job.id);
+        assert_eq!(app.rows.len(), 1);
+        app.cancel_queue();
+        assert!(app.cancel.load(Ordering::Relaxed));
+        assert!(job.cancel.load(Ordering::Relaxed));
+        app.handle_event(Event::Finished(job.id, Err("Anulowano".into())));
+        app.prepare_again(None);
+        app.start_conversion();
+        assert!(!work.try_recv().unwrap().cancel.load(Ordering::Relaxed));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn separately_dropped_aliases_do_not_queue_the_source_twice() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut app, _) = app(dir.path().to_owned());
+        let source = dir.path().join("source.png");
+        let alias = dir.path().join("alias.png");
+        std::fs::write(&source, b"fixture").unwrap();
+        std::os::unix::fs::symlink(&source, &alias).unwrap();
+        app.enqueue(vec![source]);
+        app.enqueue(vec![alias]);
+        assert_eq!(app.rows.len(), 1);
     }
 
     #[test]
@@ -1954,6 +2114,7 @@ mod queue_tests {
         for language in [Language::Polish, Language::English] {
             language.activate("en");
             for format in [
+                OutputFormat::Smart,
                 OutputFormat::Hybrid,
                 OutputFormat::Webp,
                 OutputFormat::Avif,
@@ -2259,7 +2420,7 @@ mod queue_tests {
         assert_eq!(app.rows.len(), 2);
         assert_eq!(app.ready(), 1);
         assert_eq!(app.batch_total, 1);
-        assert_eq!(first.settings.format, OutputFormat::Webp);
+        assert_eq!(first.settings.format, OutputFormat::Smart);
         app.handle_event(Event::Finished(first.id, Err("test failure".into())));
         assert!(work.try_recv().is_err()); // Finishing is not an implicit start.
         app.start_conversion();

@@ -48,7 +48,7 @@ fn raster_success_includes_english_trim_metadata_and_savings_notes() {
     let result = cli(
         &[&source],
         &dir.path().join("out"),
-        &["--trim", "transparent", "--width", "0"],
+        &["--format", "webp", "--trim", "transparent", "--width", "0"],
     );
     assert!(
         result.status.success(),

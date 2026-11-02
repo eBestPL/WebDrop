@@ -16,20 +16,21 @@ Optymalizuj obrazy i konwertuj całe foldery na potrzeby stron www. Bezpłatnie,
 
 [Sumy kontrolne SHA-256](dist/SHA256SUMS.txt)
 
-![WebDrop w ciemnym motywie — konwersja paczki w trybie hybrydowym](docs/screenshots/batch-dark-pl.jpg)
+![WebDrop w ciemnym motywie — inteligentny dobór formatu i wyniki konwersji](docs/screenshots/batch-dark-pl.jpg)
 
 ## Jak używać
 
 1. Przeciągnij obrazy lub foldery do okna. Podfoldery też zostaną przeszukane.
-2. Wybierz ustawienia i kliknij **Rozpocznij konwersję**.
+2. Kliknij **Rozpocznij konwersję**. Tryb Inteligentny sam dobierze format.
 3. Odbierz wyniki w **Downloads** albo wybierz folder źródłowy lub własny.
 
-Domyślnie: **WebP · do 1500 px szerokości · jakość 82**. Domyślnie oryginały są zachowywane. Opcja **Zapisz w → Nadpisuj oryginały** zastępuje źródła w tym samym formacie; konwersja do innego formatu zachowuje oryginał. Przycisk **Ponów** pozwala przetworzyć te same pliki z innymi ustawieniami.
+Domyślnie: **Inteligentny · do 1500 px szerokości**. Opcjonalnie zmień szerokość lub włącz **Przytnij puste brzegi** dla logo. Domyślnie oryginały są zachowywane. Opcja **Zapisz w → Nadpisuj oryginały** zastępuje źródła w tym samym formacie; konwersja do innego formatu zachowuje oryginał. Przycisk **Ponów** pozwala przetworzyć te same pliki z innymi ustawieniami.
 
 ## Możliwości
 
 - **Formaty:** PNG, JPG, WebP, AI, PDF, EPS, TIFF, HEIC, SVG, AVIF i JPEG XL.*
 - **Rozmiar:** gotowe ustawienia lub własna szerokość, z zachowaniem proporcji; bez powiększania.
+- **Inteligentny format:** automatycznie porównuje warianty PNG, WebP, JPG i AVIF dopasowane do zdjęć lub grafik. Dokładniejsze porównanie włączysz w Ustawieniach; dostępny jest też ręczny wybór formatu. JPEG XL jest opcjonalny w Ustawieniach. Zapisuje najmniejszy gotowy wynik przy wybranych wymiarach; zachowuje przezroczystość. Obejmuje tryby stratne.
 - **Auto PNG:** porównuje zapis bezstratny i paletę wysokiej jakości przy wybranych wymiarach. Wybiera mniejszy plik i używa Zopfli. Kolory mogą się minimalnie różnić; dostępne są też tryby bezstratne.
 - **Preset Logo:** bezstratny WebP i **trim** — przycinanie przezroczystych lub jednolitych marginesów, bez usuwania tła wewnątrz logo.
 - **Tryb hybrydowy:** AI/PDF/EPS → SVG; obrazy rastrowe → WebP.
@@ -39,7 +40,7 @@ Domyślnie: **WebP · do 1500 px szerokości · jakość 82**. Domyślnie orygin
 
 *AI musi być zgodny z PDF. TIFF/HEIC i rasteryzacja AI/PDF działają tylko na macOS. Windows/Linux wymagają MuPDF (`mutool` w PATH) do AI/PDF → SVG oraz Ghostscript do EPS. Na macOS oba narzędzia są dołączone.*
 
-![WebDrop w jasnym motywie — preset Logo z przycinaniem marginesów](docs/screenshots/logo-light-pl.jpg)
+![WebDrop w jasnym motywie — ręczna konwersja do WebP z przycinaniem logo](docs/screenshots/logo-light-pl.jpg)
 
 <details>
 <summary>Budowanie ze źródeł (macOS)</summary>

@@ -1,5 +1,83 @@
 // Polish source text → English. Numbered placeholders must match on both sides.
 pub const MESSAGES: &[(&str, &str)] = &[
+    ("Ręczny", "Manual"),
+    ("Anulowanie…", "Cancelling…"),
+    (
+        "Możesz dodać też całe foldery z podfolderami.",
+        "Folders and subfolders are included.",
+    ),
+    ("Ustawienia dla logo", "Logo settings"),
+    (
+        "WebP bezstratny, do 1500 px, przycięte marginesy.",
+        "Lossless WebP, up to 1500 px, trimmed margins.",
+    ),
+    (
+        "Automatycznie dobiera format, który daje najmniejszy plik wynikowy.",
+        "Automatically chooses the format that produces the smallest output file.",
+    ),
+    (
+        "Bez powiększania. Wysokość proporcjonalna.",
+        "No upscaling. Keeps proportions.",
+    ),
+    (
+        "Usuwa jednolite i przezroczyste marginesy, np. wokół logo.",
+        "Removes solid-color and transparent margins, e.g. around a logo.",
+    ),
+    (
+        "Dopuszcza kompresję stratną. SVG pozostaje SVG.",
+        "Allows lossy compression. SVG stays SVG.",
+    ),
+    ("Gotowe: {0} · Anulowane: {1}", "Done: {0} · Cancelled: {1}"),
+    ("Usuń z listy: {0}", "Remove from list: {0}"),
+    (
+        "Usuń z listy — plik pozostanie na dysku",
+        "Remove from list — keeps the file on disk",
+    ),
+    (
+        "Zachowuje piksele. Dobre do logo; zdjęcia JPG mogą dać większy plik.",
+        "Preserves pixels. Good for logos; JPG photos may become larger.",
+    ),
+    ("Inteligentny", "Smart"),
+    ("Automatyczny dobór", "Automatic selection"),
+    (
+        "Mały plik. Format dobierze WebDrop.",
+        "Small file. WebDrop picks the format.",
+    ),
+    (
+        "Dopasowuje kompresję do zdjęcia lub grafiki i zapisuje najmniejszy z porównanych plików.",
+        "Adapts compression to photos or graphics and saves the smallest file tested.",
+    ),
+    (
+        "Maksymalna szerokość. Proporcje zostają, małe obrazy nie są powiększane.",
+        "Maximum width. Keeps proportions and never enlarges small images.",
+    ),
+    ("Przytnij puste brzegi", "Trim empty edges"),
+    (
+        "Przydatne do logo: usuwa przezroczyste lub jednolite marginesy wokół obrazu.",
+        "Useful for logos: removes transparent or solid-color margins around the image.",
+    ),
+    (
+        "Przezroczystość zostaje. SVG pozostaje SVG. Kompresja może nieznacznie zmienić wygląd.",
+        "Keeps transparency. SVG stays SVG. Compression may slightly change the appearance.",
+    ),
+    (
+        "Aktywne rozszerzone porównanie w Ustawieniach",
+        "Extended comparison enabled in Settings",
+    ),
+    ("Wybierz format ręcznie", "Choose a format manually"),
+    ("Dobieranie formatu…", "Choosing the format…"),
+    (
+        "Porównaj więcej wariantów (wolniej)",
+        "Compare more variants (slower)",
+    ),
+    (
+        "Inteligentny: porównano także zapis bezstratny przydatny do grafik i logo.",
+        "Smart: also compared lossless encoding suitable for graphics and logos.",
+    ),
+    (
+        "Inteligentny: rozpoznano zdjęcie. Porównano wydajne formaty fotograficzne.",
+        "Smart: photo detected. Compared efficient photographic formats.",
+    ),
     ("Hybrydowy · SVG / WebP", "Hybrid · SVG / WebP"),
     (
         "AI, EPS, PDF, SVG → SVG. Pozostałe → WebP. Rozmiar i jakość dotyczą tylko WebP; SVG: tylko trim.",
@@ -511,6 +589,50 @@ pub const MESSAGES: &[(&str, &str)] = &[
     (
         "Każdy format używa własnych ustawień kompresji. „Oryginał” nie oznacza kopii bez zmian.",
         "Each format uses its own compression settings. “Original” does not mean an unchanged copy.",
+    ),
+    ("Inteligentny · najmniejszy", "Smart · smallest file"),
+    (
+        "Porównuje PNG, WebP, JPG i AVIF przy wybranych wymiarach. Zapisuje najmniejszy wynik. SVG pozostaje SVG.",
+        "Compares PNG, WebP, JPG and AVIF at the chosen dimensions. Saves the smallest result. SVG stays SVG.",
+    ),
+    (
+        "Jakość dotyczy prób stratnych. Porównuje też bezstratny WebP i Auto PNG. JPEG XL możesz włączyć w Ustawieniach.",
+        "Quality controls lossy trials. Also compares lossless WebP and Auto PNG. Enable JPEG XL in Settings.",
+    ),
+    (
+        "Inteligentny: uwzględniaj JPEG XL",
+        "Smart: include JPEG XL",
+    ),
+    (
+        "Może dać mniejszy plik. Sprawdź obsługę JPEG XL w docelowej aplikacji lub witrynie.",
+        "May produce a smaller file. Check JPEG XL support in your target application or website.",
+    ),
+    (
+        "Inteligentny: wybrano {0} ({1} B). Porównano: {2}.",
+        "Smart: selected {0} ({1} B). Compared: {2}.",
+    ),
+    (
+        "Inteligentny: porównanie obejmuje tryby stratne. Wymiary są zachowane; wygląd może się nieznacznie różnić.",
+        "Smart: comparisons include lossy modes. Dimensions are preserved; appearance may differ slightly.",
+    ),
+    (
+        "Wybrano JPEG XL. Sprawdź obsługę tego formatu w docelowej aplikacji lub witrynie.",
+        "Selected JPEG XL. Check support for this format in your target application or website.",
+    ),
+    (
+        "Inteligentny: pominięto niedostępny koder {0}.",
+        "Smart: skipped unavailable encoder {0}.",
+    ),
+    (
+        "Inteligentny: użyto palety wysokiej jakości przed kodowaniem. Kolory mogą się minimalnie różnić.",
+        "Smart: used a high-quality palette before encoding. Colors may differ slightly.",
+    ),
+    ("libwebp · bezstratny", "libwebp · lossless"),
+    ("libwebp · prawie bezstratny", "libwebp · near-lossless"),
+    ("libwebp · stratny", "libwebp · lossy"),
+    (
+        "Inteligentny: część prób przekroczyła limit czasu. Wybrano najmniejszy z gotowych wyników.",
+        "Smart: some trials reached the time limit. Selected the smallest completed result.",
     ),
     ("Auto · mniejszy plik", "Auto · smaller file"),
     (

@@ -4,6 +4,13 @@ use image_optimizer::optimizer::{
 };
 use std::{fs, path::Path, sync::atomic::AtomicBool};
 
+fn webp_settings() -> Settings {
+    Settings {
+        format: OutputFormat::Webp,
+        ..Settings::default()
+    }
+}
+
 fn png(path: &Path, width: u32, height: u32) -> RgbaImage {
     let image = RgbaImage::from_fn(width, height, |x, y| {
         Rgba([
@@ -29,7 +36,7 @@ fn run(path: &Path, output: &Path, settings: &Settings) -> image_optimizer::opti
 }
 
 #[test]
-fn default_batch_converts_png_and_jpeg_to_1500_webp_without_touching_sources() {
+fn webp_batch_converts_png_and_jpeg_to_1500_webp_without_touching_sources() {
     let dir = tempfile::tempdir().unwrap();
     let output = dir.path().join("Downloads");
     let first = dir.path().join("zdjęcie.png");
@@ -41,7 +48,7 @@ fn default_batch_converts_png_and_jpeg_to_1500_webp_without_touching_sources() {
         .unwrap();
     for input in [first, second] {
         let original = fs::read(&input).unwrap();
-        let result = run(&input, &output, &Settings::default());
+        let result = run(&input, &output, &webp_settings());
         assert_eq!(result.path.file_stem(), input.file_stem());
         assert_eq!(result.path.extension().unwrap(), "webp");
         assert_eq!(image::open(&result.path).unwrap().dimensions(), (1500, 750));
@@ -72,7 +79,7 @@ fn lossless_webp_preserves_all_pixels_including_transparent_rgb() {
     let original = png(&input, 80, 40);
     let settings = Settings {
         webp_mode: WebpMode::Lossless,
-        ..Default::default()
+        ..webp_settings()
     };
     let result = run(&input, dir.path(), &settings);
     assert_eq!(image::open(result.path).unwrap().to_rgba8(), original);
@@ -97,7 +104,7 @@ fn resized_alpha_has_no_dark_fringe() {
         &Settings {
             max_width: Some(30),
             webp_mode: WebpMode::Lossless,
-            ..Default::default()
+            ..webp_settings()
         },
     );
     let decoded = image::open(result.path).unwrap().to_rgba8();
@@ -119,7 +126,7 @@ fn all_png_engines_produce_decodable_outputs_and_lossless_engines_preserve_pixel
             &Settings {
                 format: OutputFormat::Png,
                 png_mode: mode,
-                ..Default::default()
+                ..webp_settings()
             },
         );
         if mode == PngMode::Zopfli {
@@ -150,7 +157,7 @@ fn png_16_bit_is_preserved_without_resize() {
         dir.path(),
         &Settings {
             format: OutputFormat::Original,
-            ..Default::default()
+            ..webp_settings()
         },
     );
     assert_eq!(image::open(result.path).unwrap().to_luma16(), pixels);
@@ -168,7 +175,7 @@ fn jpeg_composites_transparency_on_white() {
         dir.path(),
         &Settings {
             format: OutputFormat::Jpeg,
-            ..Default::default()
+            ..webp_settings()
         },
     );
     let image = image::open(result.path).unwrap().to_rgb8();
@@ -180,13 +187,13 @@ fn webp_input_and_near_lossless_mode_work() {
     let dir = tempfile::tempdir().unwrap();
     let input = dir.path().join("test.png");
     png(&input, 100, 50);
-    let first = run(&input, dir.path(), &Settings::default());
+    let first = run(&input, dir.path(), &webp_settings());
     let result = run(
         &first.path,
         dir.path(),
         &Settings {
             webp_mode: WebpMode::NearLossless,
-            ..Default::default()
+            ..webp_settings()
         },
     );
     assert_ne!(result.path, first.path);
@@ -199,8 +206,8 @@ fn name_collisions_never_overwrite_existing_files_or_originals() {
     let input = dir.path().join("same.png");
     let original = png(&input, 24, 12);
     fs::write(dir.path().join("same.webp"), b"existing").unwrap();
-    let one = run(&input, dir.path(), &Settings::default());
-    let two = run(&input, dir.path(), &Settings::default());
+    let one = run(&input, dir.path(), &webp_settings());
+    let two = run(&input, dir.path(), &webp_settings());
     assert_eq!(one.path.file_name().unwrap(), "same (1).webp");
     assert_eq!(two.path.file_name().unwrap(), "same (2).webp");
     assert_eq!(fs::read(dir.path().join("same.webp")).unwrap(), b"existing");
@@ -214,7 +221,7 @@ fn concurrent_jobs_reserve_distinct_output_names() {
     png(&input, 24, 12);
     let paths = std::thread::scope(|scope| {
         let threads: Vec<_> = (0..4)
-            .map(|_| scope.spawn(|| run(&input, dir.path(), &Settings::default()).path))
+            .map(|_| scope.spawn(|| run(&input, dir.path(), &webp_settings()).path))
             .collect();
         threads
             .into_iter()
@@ -233,25 +240,9 @@ fn cancelled_and_corrupt_jobs_leave_no_output() {
     let input = dir.path().join("broken.png");
     let output = dir.path().join("output");
     fs::write(&input, b"not a png").unwrap();
-    assert!(
-        optimize(
-            &input,
-            &output,
-            &Settings::default(),
-            &AtomicBool::new(false)
-        )
-        .is_err()
-    );
+    assert!(optimize(&input, &output, &webp_settings(), &AtomicBool::new(false)).is_err());
     png(&input, 16, 16);
-    assert!(
-        optimize(
-            &input,
-            &output,
-            &Settings::default(),
-            &AtomicBool::new(true)
-        )
-        .is_err()
-    );
+    assert!(optimize(&input, &output, &webp_settings(), &AtomicBool::new(true)).is_err());
     assert!(!output.exists());
 }
 
@@ -271,7 +262,7 @@ fn animated_png_is_rejected_instead_of_silently_losing_frames() {
     let error = optimize(
         &input,
         &dir.path().join("out"),
-        &Settings::default(),
+        &webp_settings(),
         &AtomicBool::new(false),
     )
     .unwrap_err();
@@ -298,7 +289,7 @@ fn exif_orientation_is_applied_before_resizing() {
         dir.path(),
         &Settings {
             max_width: Some(20),
-            ..Default::default()
+            ..webp_settings()
         },
     );
     assert_eq!(image::open(result.path).unwrap().dimensions(), (20, 40));
@@ -321,7 +312,7 @@ fn srgb_icc_profile_does_not_change_colors_or_alpha() {
         dir.path(),
         &Settings {
             webp_mode: WebpMode::Lossless,
-            ..Default::default()
+            ..webp_settings()
         },
     );
     assert_eq!(image::open(result.path).unwrap().to_rgba8(), pixels);
@@ -336,7 +327,7 @@ fn cli_batch_continues_after_bad_file_and_reports_failure() {
     fs::write(&bad, b"broken").unwrap();
     png(&good, 80, 40);
     let command = std::process::Command::new(env!("CARGO_BIN_EXE_image-optimizer"))
-        .args(["--batch", "--width", "40", "--output"])
+        .args(["--batch", "--format", "webp", "--width", "40", "--output"])
         .arg(&output)
         .arg(&bad)
         .arg(&good)
@@ -395,7 +386,7 @@ fn png_logo_uses_full_filter_trials_without_changing_colors_or_dimensions() {
                 max_width: None,
                 png_mode: mode,
                 thorough: true,
-                ..Default::default()
+                ..webp_settings()
             },
         );
         assert!(result.output_bytes <= reference_size as u64);

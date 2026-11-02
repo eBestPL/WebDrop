@@ -11,6 +11,10 @@ use std::{
     },
 };
 
+pub(super) fn identity(path: &std::path::Path) -> PathBuf {
+    fs::canonicalize(path).unwrap_or_else(|_| path.to_owned())
+}
+
 #[derive(Default)]
 pub(super) struct Collected {
     pub files: Vec<PathBuf>,

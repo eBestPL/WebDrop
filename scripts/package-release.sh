@@ -21,6 +21,7 @@ cp -R docs/screenshots dist/WebDrop.app/Contents/Resources/docs/
 cp docs/PACKAGING.md dist/WebDrop.app/Contents/Resources/docs/
 codesign --force --sign - dist/WebDrop.app
 codesign --verify --deep --strict dist/WebDrop.app
+touch -r dist/WebDrop.app/Contents/MacOS/image-optimizer dist/WebDrop.app
 python3 scripts/package-installers.py macos
 python3 - <<'PY'
 from pathlib import Path
